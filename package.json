@@ -14,7 +14,6 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@effect/schema": "^0.75.5",
     "csv-parse": "^6.1.0",
     "effect": "^3.17.7",
     "next": "15.4.6",
@@ -38,5 +37,14 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.4"
+  },
+  "cspell": {
+    "version": "0.2",
+    "ignorePaths": ["src/infrastructure/csv/pokemonCsv.csv"],
+    "dictionaryDefinitions": [],
+    "dictionaries": [],
+    "words": [],
+    "ignoreWords": [],
+    "import": []
   }
 }
