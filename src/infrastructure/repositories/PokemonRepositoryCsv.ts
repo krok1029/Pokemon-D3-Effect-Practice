@@ -11,6 +11,13 @@ export type ListQuery = {
   sort?: string; // 例："bst:desc,name:asc"
 };
 
+export class NotFound extends Error {
+  readonly _tag = 'NotFound';
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 /** 允許排序的欄位（白名單） */
 const ALLOWED_SORT_KEYS = new Set<keyof Pokemon>([
   'id',
@@ -113,6 +120,55 @@ export function listFromCsv(path: string, query: ListQuery) {
       const data = xs.slice(start, start + pageSize);
 
       return { total: xs.length, page, pageSize, data };
+    })
+  );
+}
+
+/** 取單筆 */
+export function getById(path: string, id: number) {
+  return readPokemonCsv(path).pipe(
+    Effect.map((rows) => rows.find((p) => p.id === id)),
+    Effect.flatMap((p) =>
+      p
+        ? Effect.succeed(p)
+        : Effect.fail(new NotFound(`Pokemon ${id} not found`))
+    )
+  );
+}
+
+/** 相似度計算（六圍的歐氏距離） */
+const METRICS: ReadonlyArray<
+  keyof Pick<
+    Pokemon,
+    'hp' | 'attack' | 'defense' | 'sp_atk' | 'sp_def' | 'speed'
+  >
+> = ['hp', 'attack', 'defense', 'sp_atk', 'sp_def', 'speed'] as const;
+
+function distance(a: Pokemon, b: Pokemon): number {
+  let sum = 0;
+  for (const k of METRICS) {
+    const d = (a[k] as number) - (b[k] as number);
+    sum += d * d;
+  }
+  return Math.sqrt(sum);
+}
+
+/** 單筆 + 相似度 Top K（排除自己） */
+export function getByIdWithSimilar(path: string, id: number, k = 5) {
+  const kk = Math.max(0, Math.min(50, Math.floor(k)));
+  return readPokemonCsv(path).pipe(
+    Effect.flatMap((rows) => {
+      const self = rows.find((p) => p.id === id);
+      if (!self) return Effect.fail(new NotFound(`Pokemon ${id} not found`));
+
+      const sim = rows
+        .filter((p) => p.id !== id)
+        .map((p) => ({ p, dist: distance(self, p) }))
+        .sort((a, b) => a.dist - b.dist)
+        .slice(0, kk)
+        .map((x) => x.p);
+
+      return Effect.succeed({ pokemon: self, similar: sim });
     })
   );
 }
