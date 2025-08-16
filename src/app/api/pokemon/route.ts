@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Effect } from 'effect';
-import path from 'node:path';
 import { list, QueryInput } from '@/application/pokemon/list';
-import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
-
-const DATA_PATH = path.resolve(
-  process.cwd(),
-  process.env.NODE_ENV === 'test'
-    ? 'data/pokemon_fixture_30.csv'
-    : 'data/pokemonCsv.csv'
-);
+import { getPokemonRepository } from '@/infrastructure/config';
 
 // 把 URLSearchParams → QueryInput
 function getQueryInput(req: NextRequest): QueryInput {
@@ -19,7 +11,7 @@ function getQueryInput(req: NextRequest): QueryInput {
 
 // API route
 export async function GET(req: NextRequest) {
-  const repo = new PokemonRepositoryCsv(DATA_PATH);
+  const repo = getPokemonRepository();
   const result = await Effect.runPromise(list(repo, getQueryInput(req)));
   if (result._tag === 'Left') {
     return NextResponse.json(
