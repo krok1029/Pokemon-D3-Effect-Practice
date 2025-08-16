@@ -23,19 +23,33 @@ function distance(a: Pokemon, b: Pokemon): number {
 }
 
 export class PokemonRepositoryCsv implements PokemonRepository {
-  constructor(private readonly path: string) {}
+  private readonly data: Promise<ReadonlyArray<Pokemon>>;
+
+  constructor(private readonly path: string) {
+    const promise = Effect.runPromise(
+      readCsv(path).pipe(
+        Effect.flatMap(parsePokemonCsv),
+        Effect.map((rows) => rows.map(toPokemon))
+      )
+    );
+    // avoid unhandled rejection warnings
+    promise.catch(() => {});
+    this.data = promise;
+  }
+
+  private load(): Effect.Effect<ReadonlyArray<Pokemon>, Error> {
+    return Effect.tryPromise({
+      try: () => this.data,
+      catch: (e) => e as Error,
+    });
+  }
 
   getAll(): Effect.Effect<ReadonlyArray<Pokemon>, Error> {
-    return readCsv(this.path).pipe(
-      Effect.flatMap(parsePokemonCsv),
-      Effect.map((rows) => rows.map(toPokemon))
-    );
+    return this.load();
   }
 
   getById(id: number): Effect.Effect<Pokemon, Error> {
-    return readCsv(this.path).pipe(
-      Effect.flatMap(parsePokemonCsv),
-      Effect.map((rows) => rows.map(toPokemon)),
+    return this.load().pipe(
       Effect.map((rows) => rows.find((p) => p.id === id)),
       Effect.flatMap((p) =>
         p ? Effect.succeed(p) : Effect.fail(new NotFound(`Pokemon ${id} not found`))
@@ -48,9 +62,7 @@ export class PokemonRepositoryCsv implements PokemonRepository {
     k = 5
   ): Effect.Effect<{ pokemon: Pokemon; similar: Pokemon[] }, Error> {
     const kk = Math.max(0, Math.min(50, Math.floor(k)));
-    return readCsv(this.path).pipe(
-      Effect.flatMap(parsePokemonCsv),
-      Effect.map((rows) => rows.map(toPokemon)),
+    return this.load().pipe(
       Effect.flatMap((rows) => {
         const self = rows.find((p) => p.id === id);
         if (!self) return Effect.fail(new NotFound(`Pokemon ${id} not found`));
