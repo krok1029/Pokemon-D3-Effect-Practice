@@ -3,10 +3,10 @@ import { Effect } from 'effect';
 import { readCsv } from '@/infrastructure/csv/CsvService';
 import type { Pokemon } from '@/domain/pokemon';
 import { parsePokemonCsv, toPokemon } from '@/infrastructure/csv/pokemonCsv';
-import type { PokemonRepository } from '@/application/repositories/PokemonRepository';
-import { NotFound } from '@/application/repositories/PokemonRepository';
+import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import { NotFound } from '@/domain/repositories/PokemonRepository';
 
-export { NotFound } from '@/application/repositories/PokemonRepository';
+export { NotFound } from '@/domain/repositories/PokemonRepository';
 
 /** 相似度計算（六圍的歐氏距離） */
 const METRICS: ReadonlyArray<

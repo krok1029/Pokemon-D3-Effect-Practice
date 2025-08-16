@@ -1,5 +1,5 @@
 import { Effect, Schema as S } from 'effect';
-import type { PokemonRepository } from '@/application/repositories/PokemonRepository';
+import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
 import type { Pokemon } from '@/domain/pokemon';
 import { invalidInput } from '../errors';
 

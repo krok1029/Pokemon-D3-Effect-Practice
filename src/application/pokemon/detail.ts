@@ -2,7 +2,7 @@ import { Effect, Schema as S } from 'effect';
 import {
   type PokemonRepository,
   NotFound as RepoNotFound,
-} from '@/application/repositories/PokemonRepository';
+} from '@/domain/repositories/PokemonRepository';
 import { invalidInput, notFound } from '../errors';
 
 export const PathSchema = S.Struct({ id: S.NumberFromString });
