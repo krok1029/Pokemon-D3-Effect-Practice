@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Effect, Either } from 'effect';
-import { readPokemonCsv } from '@/infrastructure/csv/CsvService';
+import { readCsv } from '@/infrastructure/csv/CsvService';
+import { parsePokemonCsv } from '@/infrastructure/csv/pokemonCsv';
 import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
 import { NotFound } from '@/application/repositories/PokemonRepository';
 
@@ -9,7 +10,9 @@ const FIXTURE = 'data/pokemon_fixture_30.csv';
 describe('整合：單筆 + 相似度', () => {
   it('能取第一筆資料的詳細與相似度 top K（不包含自己）', async () => {
     // 先讀取 CSV 拿到一個存在的 id
-    const rows = await Effect.runPromise(readPokemonCsv(FIXTURE));
+    const rows = await Effect.runPromise(
+      readCsv(FIXTURE).pipe(Effect.flatMap(parsePokemonCsv))
+    );
     expect(rows.length).toBeGreaterThan(0);
 
     const id = rows[0].Number;
