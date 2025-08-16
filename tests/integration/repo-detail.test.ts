@@ -14,7 +14,7 @@ describe('整合：單筆 + 相似度', () => {
     const rows = await Effect.runPromise(readPokemonCsv(FIXTURE));
     expect(rows.length).toBeGreaterThan(0);
 
-    const id = rows[0].id;
+    const id = rows[0].Number;
     const k = 5;
 
     const eff = getByIdWithSimilar(FIXTURE, id, k);

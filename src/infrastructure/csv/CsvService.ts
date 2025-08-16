@@ -3,7 +3,7 @@ import { Effect } from 'effect';
 import fs from 'node:fs/promises';
 import { parse } from 'csv-parse/sync';
 import * as S from 'effect/Schema';
-import { PokemonCsvRow, toPokemon } from './pokemonCsv';
+import { PokemonCsvRow } from './pokemonCsv';
 
 export class DataLoadError extends Error {}
 
@@ -20,6 +20,5 @@ export const readPokemonCsv = (path: string) =>
           Effect.mapError((e) => new DataLoadError(String(e)))
         )
       )
-    ),
-    Effect.map((decodedRows) => decodedRows.map(toPokemon))
+    )
   );

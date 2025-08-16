@@ -2,6 +2,7 @@
 import { Effect } from 'effect';
 import { readPokemonCsv } from '@/infrastructure/csv/CsvService';
 import type { Pokemon } from '@/domain/pokemon';
+import { toPokemon } from '@/infrastructure/csv/pokemonCsv';
 
 export type ListQuery = {
   q?: string;
@@ -92,6 +93,7 @@ function compareByPairs(a: Pokemon, b: Pokemon, pairs: SortPair[]): number {
 
 export function listFromCsv(path: string, query: ListQuery) {
   return readPokemonCsv(path).pipe(
+    Effect.map((rows) => rows.map(toPokemon)),
     Effect.map((rows) => {
       let xs = rows.slice();
 
@@ -127,6 +129,7 @@ export function listFromCsv(path: string, query: ListQuery) {
 /** 取單筆 */
 export function getById(path: string, id: number) {
   return readPokemonCsv(path).pipe(
+    Effect.map((rows) => rows.map(toPokemon)),
     Effect.map((rows) => rows.find((p) => p.id === id)),
     Effect.flatMap((p) =>
       p
@@ -157,6 +160,7 @@ function distance(a: Pokemon, b: Pokemon): number {
 export function getByIdWithSimilar(path: string, id: number, k = 5) {
   const kk = Math.max(0, Math.min(50, Math.floor(k)));
   return readPokemonCsv(path).pipe(
+    Effect.map((rows) => rows.map(toPokemon)),
     Effect.flatMap((rows) => {
       const self = rows.find((p) => p.id === id);
       if (!self) return Effect.fail(new NotFound(`Pokemon ${id} not found`));
