@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { Effect, Either } from 'effect';
 import { readPokemonCsv } from '@/infrastructure/csv/CsvService';
-import { TYPES } from '@/app/domain/types';
+import { TYPES } from '@/domain/types';
 
 const FIXTURE = 'data/pokemon_fixture_30.csv';
 

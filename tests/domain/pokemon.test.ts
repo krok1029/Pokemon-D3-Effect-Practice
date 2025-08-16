@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { TYPES, type TypeName, type Multiplier } from '@/app/domain/types';
-import { parseAbilities, multiplyAgainst } from '@/app/domain/pokemon';
+import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
+import { parseAbilities, multiplyAgainst } from '@/domain/pokemon';
 
 describe('Abilities 與相剋工具函式', () => {
   it('parseAbilities：能以逗號/分號切割、修剪空白並去重（忽略大小寫）', () => {

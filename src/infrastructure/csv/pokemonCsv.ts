@@ -1,7 +1,7 @@
 // src/infrastructure/csv/pokemonCsv.ts
 import * as S from 'effect/Schema';
-import { parseAbilities } from '@/app/domain/pokemon';
-import { TYPES, type TypeName, type Multiplier } from '@/app/domain/types';
+import { parseAbilities } from '@/domain/pokemon';
+import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
 
 const NumStr = S.NumberFromString;
 
