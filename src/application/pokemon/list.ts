@@ -1,5 +1,5 @@
 import { Effect, Schema as S } from 'effect';
-import { listFromCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
+import type { PokemonRepository } from '@/application/repositories/PokemonRepository';
 import { invalidInput } from '../errors';
 
 export const QuerySchema = S.Struct({
@@ -21,11 +21,11 @@ function toBoolLike(raw?: string | null): boolean | undefined {
   return undefined;
 }
 
-export function list(path: string, input: QueryInput) {
+export function list(repo: PokemonRepository, input: QueryInput) {
   const eff = S.decodeUnknown(QuerySchema)(input).pipe(
     Effect.mapError((e) => invalidInput(String(e))),
     Effect.flatMap((q: Query) =>
-      listFromCsv(path, {
+      repo.list({
         ...q,
         legendary: toBoolLike(q.legendary),
       })

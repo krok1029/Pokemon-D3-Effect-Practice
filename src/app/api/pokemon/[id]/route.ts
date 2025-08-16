@@ -7,6 +7,7 @@ import {
   PathInput,
   QueryInput,
 } from '@/application/pokemon/detail';
+import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
 const DATA_PATH = path.resolve(
   process.cwd(),
@@ -25,8 +26,9 @@ function getQueryInput(req: NextRequest): QueryInput {
 }
 
 export async function GET(req: NextRequest, ctx: { params: { id: string } }) {
+  const repo = new PokemonRepositoryCsv(DATA_PATH);
   const result = await Effect.runPromise(
-    detail(DATA_PATH, { path: getPathInput(ctx.params), query: getQueryInput(req) })
+    detail(repo, { path: getPathInput(ctx.params), query: getQueryInput(req) })
   );
   if (result._tag === 'Left') {
     const status = result.left._tag === 'NotFound' ? 404 : 400;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Effect } from 'effect';
 import path from 'node:path';
 import { list, QueryInput } from '@/application/pokemon/list';
+import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
 const DATA_PATH = path.resolve(
   process.cwd(),
@@ -18,7 +19,8 @@ function getQueryInput(req: NextRequest): QueryInput {
 
 // API route
 export async function GET(req: NextRequest) {
-  const result = await Effect.runPromise(list(DATA_PATH, getQueryInput(req)));
+  const repo = new PokemonRepositoryCsv(DATA_PATH);
+  const result = await Effect.runPromise(list(repo, getQueryInput(req)));
   if (result._tag === 'Left') {
     return NextResponse.json(
       { error: { code: 'INVALID_INPUT', message: result.left.message } },
