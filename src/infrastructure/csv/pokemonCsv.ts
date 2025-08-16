@@ -9,6 +9,7 @@ import {
   type Pokemon,
 } from '@/domain/pokemon';
 import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
+import { toBool } from '@/domain/bool';
 
 const NumStr = S.NumberFromString;
 
@@ -75,15 +76,6 @@ export const parsePokemonCsv = (
       Effect.mapError((e) => new DataLoadError(String(e)))
     )
   );
-
-// —— 小工具：布林轉換 ——
-
-function toBool(raw?: string | null): boolean | undefined {
-  if (raw == null) return undefined;
-  const s = String(raw).trim().toLowerCase();
-  if (s === '') return undefined;
-  return s === '1.0';
-}
 
 // 方便安全索引 "Against XXX" 欄位
 type AgainstKey = `Against ${TypeName}`;
