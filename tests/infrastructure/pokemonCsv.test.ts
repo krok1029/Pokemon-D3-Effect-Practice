@@ -1,4 +1,4 @@
-// tests/domain/pokemonCsv.test.ts
+// tests/infrastructure/pokemonCsv.test.ts
 import { describe, it, expect } from 'vitest';
 import * as S from 'effect/Schema';
 import { PokemonCsvRow, toPokemon } from '@/infrastructure/csv/pokemonCsv';
