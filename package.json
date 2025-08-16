@@ -40,7 +40,7 @@
   },
   "cspell": {
     "version": "0.2",
-    "ignorePaths": ["src/infrastructure/csv/pokemonCsv.csv"],
+    "ignorePaths": ["data/pokemonCsv.csv"],
     "dictionaryDefinitions": [],
     "dictionaries": [],
     "words": [],

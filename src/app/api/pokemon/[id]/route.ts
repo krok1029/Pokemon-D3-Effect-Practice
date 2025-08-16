@@ -2,10 +2,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Effect, Schema as S } from 'effect';
 import path from 'node:path';
-import { getByIdWithSimilar, NotFound } from '@/infrastructure/repositories/PokemonRepositoryCsv';
+import {
+  getByIdWithSimilar,
+  NotFound,
+} from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
-const DATA_PATH =
-  process.env.DATA_PATH ?? path.resolve(process.cwd(), 'data/pokemon_fixture_30.csv');
+const DATA_PATH = path.resolve(
+  process.cwd(),
+  process.env.NODE_ENV === 'test'
+    ? 'data/pokemon_fixture_30.csv'
+    : 'data/pokemonCsv.csv'
+);
 
 // Path: /api/pokemon/[id]
 export const PathSchema = S.Struct({ id: S.NumberFromString });
@@ -28,19 +35,24 @@ function getQueryInput(req: NextRequest): QueryInput {
 
 export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
   // decode path & query → 取得已驗證的數值
-  const eff = Effect.flatMap(S.decodeUnknown(PathSchema)(getPathInput(ctx.params)), (p: Path) =>
-    Effect.flatMap(S.decodeUnknown(QuerySchema)(getQueryInput(_req)), (q: Query) =>
-      getByIdWithSimilar(DATA_PATH, p.id, q.k ?? 5)
-    )
+  const eff = Effect.flatMap(
+    S.decodeUnknown(PathSchema)(getPathInput(ctx.params)),
+    (p: Path) =>
+      Effect.flatMap(
+        S.decodeUnknown(QuerySchema)(getQueryInput(_req)),
+        (q: Query) => getByIdWithSimilar(DATA_PATH, p.id, q.k ?? 5)
+      )
   );
 
   return await Effect.runPromise(
     Effect.match(eff, {
       onFailure: (e) => {
-        console.log('Error fetching Pokemon by ID asdfasfsdfdas:', e);
         const status = e instanceof NotFound ? 404 : 400;
         const code = e instanceof NotFound ? 'NOT_FOUND' : 'INVALID_INPUT';
-        return NextResponse.json({ error: { code, message: String(e) } }, { status });
+        return NextResponse.json(
+          { error: { code, message: String(e) } },
+          { status }
+        );
       },
       onSuccess: (data) => NextResponse.json(data),
     })

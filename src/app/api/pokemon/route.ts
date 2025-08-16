@@ -3,9 +3,12 @@ import { Effect, Schema as S } from 'effect';
 import path from 'node:path';
 import { listFromCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
-const DATA_PATH =
-  process.env.DATA_PATH ??
-  path.resolve(process.cwd(), 'data/pokemon_fixture_30.csv');
+const DATA_PATH = path.resolve(
+  process.cwd(),
+  process.env.NODE_ENV === 'test'
+    ? 'data/pokemon_fixture_30.csv'
+    : 'data/pokemonCsv.csv'
+);
 
 // ❶ 定義 Schema（執行時存在的值）
 export const QuerySchema = S.Struct({
