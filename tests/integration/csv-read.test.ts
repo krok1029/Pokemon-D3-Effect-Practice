@@ -1,13 +1,15 @@
 // tests/integration/csv-read.test.ts
 import { describe, it, expect } from 'vitest';
 import { Effect, Either } from 'effect';
-import { readPokemonCsv } from '@/infrastructure/csv/CsvService';
+import { readCsv } from '@/infrastructure/csv/CsvService';
+import { parsePokemonCsv } from '@/infrastructure/csv/pokemonCsv';
 
 const FIXTURE = 'data/pokemon_fixture_30.csv';
 
 describe('整合：CSV 解析', () => {
   it('能讀取 30 筆並解析欄位', async () => {
-    const r = await Effect.runPromise(Effect.either(readPokemonCsv(FIXTURE)));
+    const eff = readCsv(FIXTURE).pipe(Effect.flatMap(parsePokemonCsv));
+    const r = await Effect.runPromise(Effect.either(eff));
     expect(Either.isRight(r)).toBe(true);
     if (Either.isRight(r)) {
       const rows = r.right;

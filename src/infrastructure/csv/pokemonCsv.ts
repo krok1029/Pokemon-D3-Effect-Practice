@@ -1,5 +1,7 @@
 // src/infrastructure/csv/pokemonCsv.ts
+import { Effect } from 'effect';
 import * as S from 'effect/Schema';
+import { DataLoadError } from './CsvService';
 import {
   parseAbilities,
   toTypeName,
@@ -64,6 +66,15 @@ export const PokemonCsvRow = S.Struct({
   BMI: S.optional(NumStr),
 });
 export type PokemonCsvRow = S.Schema.Type<typeof PokemonCsvRow>;
+
+export const parsePokemonCsv = (
+  rows: unknown[]
+): Effect.Effect<PokemonCsvRow[], DataLoadError> =>
+  Effect.forEach(rows, (r) =>
+    S.decodeUnknown(PokemonCsvRow)(r).pipe(
+      Effect.mapError((e) => new DataLoadError(String(e)))
+    )
+  );
 
 // —— 小工具：布林轉換 ——
 

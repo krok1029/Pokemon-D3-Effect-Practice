@@ -1,8 +1,8 @@
 // src/infrastructure/repositories/PokemonRepositoryCsv.ts
 import { Effect } from 'effect';
-import { readPokemonCsv } from '@/infrastructure/csv/CsvService';
+import { readCsv } from '@/infrastructure/csv/CsvService';
 import type { Pokemon } from '@/domain/pokemon';
-import { toPokemon } from '@/infrastructure/csv/pokemonCsv';
+import { parsePokemonCsv, toPokemon } from '@/infrastructure/csv/pokemonCsv';
 import type { PokemonRepository } from '@/application/repositories/PokemonRepository';
 import { NotFound } from '@/application/repositories/PokemonRepository';
 
@@ -26,13 +26,15 @@ export class PokemonRepositoryCsv implements PokemonRepository {
   constructor(private readonly path: string) {}
 
   getAll(): Effect.Effect<ReadonlyArray<Pokemon>, Error> {
-    return readPokemonCsv(this.path).pipe(
+    return readCsv(this.path).pipe(
+      Effect.flatMap(parsePokemonCsv),
       Effect.map((rows) => rows.map(toPokemon))
     );
   }
 
   getById(id: number): Effect.Effect<Pokemon, Error> {
-    return readPokemonCsv(this.path).pipe(
+    return readCsv(this.path).pipe(
+      Effect.flatMap(parsePokemonCsv),
       Effect.map((rows) => rows.map(toPokemon)),
       Effect.map((rows) => rows.find((p) => p.id === id)),
       Effect.flatMap((p) =>
@@ -46,7 +48,8 @@ export class PokemonRepositoryCsv implements PokemonRepository {
     k = 5
   ): Effect.Effect<{ pokemon: Pokemon; similar: Pokemon[] }, Error> {
     const kk = Math.max(0, Math.min(50, Math.floor(k)));
-    return readPokemonCsv(this.path).pipe(
+    return readCsv(this.path).pipe(
+      Effect.flatMap(parsePokemonCsv),
       Effect.map((rows) => rows.map(toPokemon)),
       Effect.flatMap((rows) => {
         const self = rows.find((p) => p.id === id);
