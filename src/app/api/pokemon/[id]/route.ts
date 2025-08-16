@@ -1,11 +1,12 @@
 // src/app/api/pokemon/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { Effect, Schema as S } from 'effect';
+import { Effect } from 'effect';
 import path from 'node:path';
 import {
-  getByIdWithSimilar,
-  NotFound,
-} from '@/infrastructure/repositories/PokemonRepositoryCsv';
+  detail,
+  PathInput,
+  QueryInput,
+} from '@/application/pokemon/detail';
 
 const DATA_PATH = path.resolve(
   process.cwd(),
@@ -13,16 +14,6 @@ const DATA_PATH = path.resolve(
     ? 'data/pokemon_fixture_30.csv'
     : 'data/pokemonCsv.csv'
 );
-
-// Path: /api/pokemon/[id]
-export const PathSchema = S.Struct({ id: S.NumberFromString });
-export type Path = S.Schema.Type<typeof PathSchema>;
-export type PathInput = S.Schema.Encoded<typeof PathSchema>;
-
-// Query: ?k=5
-export const QuerySchema = S.Struct({ k: S.optional(S.NumberFromString) });
-export type Query = S.Schema.Type<typeof QuerySchema>;
-export type QueryInput = S.Schema.Encoded<typeof QuerySchema>;
 
 function getPathInput(params: { id: string }): PathInput {
   return { id: params.id };
@@ -33,28 +24,17 @@ function getQueryInput(req: NextRequest): QueryInput {
   return Object.fromEntries(url.searchParams.entries()) as QueryInput;
 }
 
-export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
-  // decode path & query → 取得已驗證的數值
-  const eff = Effect.flatMap(
-    S.decodeUnknown(PathSchema)(getPathInput(ctx.params)),
-    (p: Path) =>
-      Effect.flatMap(
-        S.decodeUnknown(QuerySchema)(getQueryInput(_req)),
-        (q: Query) => getByIdWithSimilar(DATA_PATH, p.id, q.k ?? 5)
-      )
+export async function GET(req: NextRequest, ctx: { params: { id: string } }) {
+  const result = await Effect.runPromise(
+    detail(DATA_PATH, { path: getPathInput(ctx.params), query: getQueryInput(req) })
   );
-
-  return await Effect.runPromise(
-    Effect.match(eff, {
-      onFailure: (e) => {
-        const status = e instanceof NotFound ? 404 : 400;
-        const code = e instanceof NotFound ? 'NOT_FOUND' : 'INVALID_INPUT';
-        return NextResponse.json(
-          { error: { code, message: String(e) } },
-          { status }
-        );
-      },
-      onSuccess: (data) => NextResponse.json(data),
-    })
-  );
+  if (result._tag === 'Left') {
+    const status = result.left._tag === 'NotFound' ? 404 : 400;
+    const code = result.left._tag === 'NotFound' ? 'NOT_FOUND' : 'INVALID_INPUT';
+    return NextResponse.json(
+      { error: { code, message: result.left.message } },
+      { status }
+    );
+  }
+  return NextResponse.json(result.right);
 }
