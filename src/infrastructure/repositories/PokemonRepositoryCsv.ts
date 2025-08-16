@@ -1,7 +1,7 @@
 // src/infrastructure/repositories/PokemonRepositoryCsv.ts
 import { Effect } from 'effect';
 import { readPokemonCsv } from '@/infrastructure/csv/CsvService';
-import type { Pokemon } from '@/infrastructure/csv/pokemonCsv';
+import type { Pokemon } from '@/domain/pokemon';
 
 export type ListQuery = {
   q?: string;

@@ -1,6 +1,11 @@
 // src/infrastructure/csv/pokemonCsv.ts
 import * as S from 'effect/Schema';
-import { parseAbilities } from '@/domain/pokemon';
+import {
+  parseAbilities,
+  toTypeName,
+  toMultiplier,
+  type Pokemon,
+} from '@/domain/pokemon';
 import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
 
 const NumStr = S.NumberFromString;
@@ -60,50 +65,7 @@ export const PokemonCsvRow = S.Struct({
 });
 export type PokemonCsvRow = S.Schema.Type<typeof PokemonCsvRow>;
 
-// 內部模型（Normalized）
-export type Pokemon = {
-  id: number;
-  name: string;
-  type1: TypeName;
-  type2?: TypeName | null;
-  abilities: string[];
-  hp: number;
-  attack: number;
-  defense: number;
-  sp_atk: number;
-  sp_def: number;
-  speed: number;
-  bst: number;
-  mean?: number;
-  sd?: number;
-  generation: number;
-  expType?: string;
-  expTo100?: number;
-  finalEvolution?: boolean;
-  catchRate?: number;
-  legendary: boolean;
-  mega?: boolean;
-  alolan?: boolean;
-  galarian?: boolean;
-  against: Record<TypeName, Multiplier>;
-  height?: number;
-  weight?: number;
-  bmi?: number;
-};
-
-// —— 小工具：型別/倍率/布林轉換 ——
-function toTypeName(raw: string): TypeName {
-  if (!TYPES.includes(raw as TypeName)) throw new Error(`Unknown type: ${raw}`);
-  return raw as TypeName;
-}
-
-function asMultiplier(n: number | undefined): Multiplier {
-  const legal = [0, 0.25, 0.5, 1, 2, 4] as const;
-  const v = n ?? 1;
-  if (!legal.includes(v as Multiplier))
-    throw new Error(`Illegal multiplier ${v}`);
-  return v as Multiplier;
-}
+// —— 小工具：布林轉換 ——
 
 function toBool(raw?: string | null): boolean | undefined {
   if (raw == null) return undefined;
@@ -119,7 +81,7 @@ export function toPokemon(row: PokemonCsvRow): Pokemon {
   // 建 against 物件（避免 any）
   const r = row as unknown as Record<AgainstKey, number | undefined>;
   const against = Object.fromEntries(
-    TYPES.map((t) => [t, asMultiplier(r[`Against ${t}` as AgainstKey])])
+    TYPES.map((t) => [t, toMultiplier(r[`Against ${t}` as AgainstKey])])
   ) as Record<TypeName, Multiplier>;
 
   return {
@@ -127,7 +89,7 @@ export function toPokemon(row: PokemonCsvRow): Pokemon {
     name: row.Name,
     type1: toTypeName(row['Type 1']),
     type2: row['Type 2'] ? toTypeName(row['Type 2'] as string) : null,
-    abilities: parseAbilities(row.Abilities ?? ''),
+    abilities: parseAbilities(row.Abilities),
     hp: row.HP,
     attack: row.Att,
     defense: row.Def,
