@@ -2,21 +2,11 @@
 import { Effect } from 'effect';
 import { readPokemonCsv } from '@/infrastructure/csv/CsvService';
 import type { Pokemon } from '@/infrastructure/csv/pokemonCsv';
-
-export type ListQuery = {
-  q?: string;
-  legendary?: boolean;
-  page?: number;
-  pageSize?: number;
-  sort?: string; // 例："bst:desc,name:asc"
-};
-
-export class NotFound extends Error {
-  readonly _tag = 'NotFound';
-  constructor(message: string) {
-    super(message);
-  }
-}
+import type {
+  PokemonRepository,
+  ListQuery,
+} from '@/domain/repositories/PokemonRepository';
+import { NotFound } from '@/domain/repositories/PokemonRepository';
 
 /** 允許排序的欄位（白名單） */
 const ALLOWED_SORT_KEYS = new Set<keyof Pokemon>([
@@ -90,7 +80,7 @@ function compareByPairs(a: Pokemon, b: Pokemon, pairs: SortPair[]): number {
   return 0;
 }
 
-export function listFromCsv(path: string, query: ListQuery) {
+function listFromCsv(path: string, query: ListQuery) {
   return readPokemonCsv(path).pipe(
     Effect.map((rows) => {
       let xs = rows.slice();
@@ -125,7 +115,7 @@ export function listFromCsv(path: string, query: ListQuery) {
 }
 
 /** 取單筆 */
-export function getById(path: string, id: number) {
+function getByIdFromCsv(path: string, id: number) {
   return readPokemonCsv(path).pipe(
     Effect.map((rows) => rows.find((p) => p.id === id)),
     Effect.flatMap((p) =>
@@ -154,7 +144,7 @@ function distance(a: Pokemon, b: Pokemon): number {
 }
 
 /** 單筆 + 相似度 Top K（排除自己） */
-export function getByIdWithSimilar(path: string, id: number, k = 5) {
+function getByIdWithSimilarFromCsv(path: string, id: number, k = 5) {
   const kk = Math.max(0, Math.min(50, Math.floor(k)));
   return readPokemonCsv(path).pipe(
     Effect.flatMap((rows) => {
@@ -172,3 +162,21 @@ export function getByIdWithSimilar(path: string, id: number, k = 5) {
     })
   );
 }
+
+export class PokemonRepositoryCsv implements PokemonRepository {
+  constructor(private readonly path: string) {}
+
+  list(query: ListQuery) {
+    return listFromCsv(this.path, query);
+  }
+
+  getById(id: number) {
+    return getByIdFromCsv(this.path, id);
+  }
+
+  getByIdWithSimilar(id: number, k = 5) {
+    return getByIdWithSimilarFromCsv(this.path, id, k);
+  }
+}
+
+export { PokemonRepositoryCsv as PokemonRepository }; // export concrete implementation

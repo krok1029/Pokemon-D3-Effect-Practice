@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Effect, Schema as S } from 'effect';
 import path from 'node:path';
-import { listFromCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
+import { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import {
+  PokemonRepository as PokemonRepositoryCsv,
+} from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
 const DATA_PATH = path.resolve(
   process.cwd(),
@@ -9,6 +12,8 @@ const DATA_PATH = path.resolve(
     ? 'data/pokemon_fixture_30.csv'
     : 'data/pokemonCsv.csv'
 );
+
+const repo: PokemonRepository = new PokemonRepositoryCsv(DATA_PATH);
 
 // ❶ 定義 Schema（執行時存在的值）
 export const QuerySchema = S.Struct({
@@ -47,7 +52,7 @@ export async function GET(req: NextRequest) {
       Effect.flatMap(
         S.decodeUnknown(QuerySchema)(getQueryInput(req)),
         (q: Query) =>
-          listFromCsv(DATA_PATH, {
+          repo.list({
             ...q,
             legendary: toBoolLike(q.legendary),
           })

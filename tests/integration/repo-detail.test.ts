@@ -2,8 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { Effect, Either } from 'effect';
 import { readPokemonCsv } from '@/infrastructure/csv/CsvService';
 import {
-  getByIdWithSimilar,
+  PokemonRepository,
   NotFound,
+} from '@/domain/repositories/PokemonRepository';
+import {
+  PokemonRepository as PokemonRepositoryCsv,
 } from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
 const FIXTURE = 'data/pokemon_fixture_30.csv';
@@ -17,7 +20,8 @@ describe('整合：單筆 + 相似度', () => {
     const id = rows[0].id;
     const k = 5;
 
-    const eff = getByIdWithSimilar(FIXTURE, id, k);
+    const repo: PokemonRepository = new PokemonRepositoryCsv(FIXTURE);
+    const eff = repo.getByIdWithSimilar(id, k);
     const r = await Effect.runPromise(Effect.either(eff));
     expect(Either.isRight(r)).toBe(true);
 
@@ -33,7 +37,8 @@ describe('整合：單筆 + 相似度', () => {
   });
 
   it('找不到 id 時回 NotFound', async () => {
-    const eff = getByIdWithSimilar(FIXTURE, 9999, 0);
+    const repo: PokemonRepository = new PokemonRepositoryCsv(FIXTURE);
+    const eff = repo.getByIdWithSimilar(9999, 0);
 
     const r = await Effect.runPromise(Effect.either(eff));
     expect(Either.isLeft(r)).toBe(true);

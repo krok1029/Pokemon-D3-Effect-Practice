@@ -3,8 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Effect, Schema as S } from 'effect';
 import path from 'node:path';
 import {
-  getByIdWithSimilar,
+  PokemonRepository,
   NotFound,
+} from '@/domain/repositories/PokemonRepository';
+import {
+  PokemonRepository as PokemonRepositoryCsv,
 } from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
 const DATA_PATH = path.resolve(
@@ -13,6 +16,8 @@ const DATA_PATH = path.resolve(
     ? 'data/pokemon_fixture_30.csv'
     : 'data/pokemonCsv.csv'
 );
+
+const repo: PokemonRepository = new PokemonRepositoryCsv(DATA_PATH);
 
 // Path: /api/pokemon/[id]
 export const PathSchema = S.Struct({ id: S.NumberFromString });
@@ -40,7 +45,7 @@ export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
     (p: Path) =>
       Effect.flatMap(
         S.decodeUnknown(QuerySchema)(getQueryInput(_req)),
-        (q: Query) => getByIdWithSimilar(DATA_PATH, p.id, q.k ?? 5)
+        (q: Query) => repo.getByIdWithSimilar(p.id, q.k ?? 5)
       )
   );
 
