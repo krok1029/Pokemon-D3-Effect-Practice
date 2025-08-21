@@ -1,6 +1,10 @@
 import { Effect } from 'effect';
 import type { Pokemon } from '@/domain/pokemon';
-import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import type {
+  PokemonRepository,
+  PokemonListParams,
+  PokemonListResult,
+} from '@/domain/repositories/PokemonRepository';
 
 export interface EffectPokemonRepository {
   getAll(): Effect.Effect<ReadonlyArray<Pokemon>, Error>;
@@ -9,6 +13,9 @@ export interface EffectPokemonRepository {
     id: number,
     k: number
   ): Effect.Effect<{ pokemon: Pokemon; similar: Pokemon[] }, Error>;
+  list(
+    params: PokemonListParams
+  ): Effect.Effect<PokemonListResult, Error>;
 }
 
 export class PokemonRepositoryEffectAdapter implements EffectPokemonRepository {
@@ -24,5 +31,9 @@ export class PokemonRepositoryEffectAdapter implements EffectPokemonRepository {
 
   getByIdWithSimilar(id: number, k: number) {
     return Effect.tryPromise(() => this.repo.getByIdWithSimilar(id, k));
+  }
+
+  list(params: PokemonListParams) {
+    return Effect.tryPromise(() => this.repo.list(params));
   }
 }

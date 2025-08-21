@@ -21,6 +21,9 @@ class MockRepo implements EffectPokemonRepository {
     if (!p) return Effect.fail(new Error('not found'));
     return Effect.succeed({ pokemon: p, similar: [] });
   }
+  list() {
+    return Effect.succeed({ total: this.data.length, page: 1, pageSize: this.data.length, data: this.data });
+  }
 }
 
 function dummyPokemon(id: number): Pokemon {

@@ -22,3 +22,15 @@ describe('PokemonRepositoryCsv caching', () => {
     spy.mockRestore();
   });
 });
+
+describe('PokemonRepositoryCsv list', () => {
+  it('supports filtering, sorting and pagination', async () => {
+    const repo = new PokemonRepositoryCsv(FIXTURE);
+    const out = await Effect.runPromise(
+      repo.list({ legendary: true, page: 1, pageSize: 100, sort: 'bst:desc,name:asc' })
+    );
+    expect(out.total).toBeGreaterThan(0);
+    expect(out.data.length).toBeGreaterThan(0);
+    expect(out.data.every((p) => p.legendary)).toBe(true);
+  });
+});

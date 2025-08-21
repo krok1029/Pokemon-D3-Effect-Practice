@@ -7,6 +7,21 @@ export class NotFound extends Error {
   }
 }
 
+export interface PokemonListParams {
+  q?: string;
+  legendary?: boolean;
+  sort?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PokemonListResult {
+  total: number;
+  page: number;
+  pageSize: number;
+  data: ReadonlyArray<Pokemon>;
+}
+
 export interface PokemonRepository {
   getAll(): Promise<ReadonlyArray<Pokemon>>;
   getById(id: number): Promise<Pokemon>;
@@ -14,4 +29,5 @@ export interface PokemonRepository {
     id: number,
     k: number
   ): Promise<{ pokemon: Pokemon; similar: Pokemon[] }>;
+  list(params: PokemonListParams): Promise<PokemonListResult>;
 }
