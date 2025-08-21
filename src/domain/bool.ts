@@ -6,6 +6,3 @@ export function toBoolLike(raw?: string | number | boolean | null): boolean | un
   return undefined;
 }
 
-export function toBool(raw?: string | number | boolean | null): boolean | undefined {
-  return toBoolLike(raw);
-}

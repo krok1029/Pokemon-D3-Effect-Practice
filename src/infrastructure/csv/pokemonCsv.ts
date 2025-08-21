@@ -9,7 +9,7 @@ import {
   type Pokemon,
 } from '@/domain/pokemon';
 import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
-import { toBool } from '@/domain/bool';
+import { toBoolLike } from '@/domain/bool';
 
 const NumStr = S.NumberFromString;
 
@@ -105,12 +105,12 @@ export function toPokemon(row: PokemonCsvRow): Pokemon {
     generation: row.Generation,
     expType: row['Experience type'] ?? undefined,
     expTo100: row['Experience to level 100'] ?? undefined,
-    finalEvolution: toBool(row['Final Evolution']),
+    finalEvolution: toBoolLike(row['Final Evolution']),
     catchRate: row['Catch Rate'] ?? undefined,
-    legendary: toBool(row.Legendary) ?? false,
-    mega: toBool(row['Mega Evolution']),
-    alolan: toBool(row['Alolan Form']),
-    galarian: toBool(row['Galarian Form']),
+    legendary: toBoolLike(row.Legendary) ?? false,
+    mega: toBoolLike(row['Mega Evolution']),
+    alolan: toBoolLike(row['Alolan Form']),
+    galarian: toBoolLike(row['Galarian Form']),
     against,
     height: row.Height ?? undefined,
     weight: row.Weight ?? undefined,
