@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import type { Pokemon } from '@/domain/pokemon';
 
 export class NotFound extends Error {
@@ -9,10 +8,10 @@ export class NotFound extends Error {
 }
 
 export interface PokemonRepository {
-  getAll(): Effect.Effect<ReadonlyArray<Pokemon>, Error>;
-  getById(id: number): Effect.Effect<Pokemon, Error>;
+  getAll(): Promise<ReadonlyArray<Pokemon>>;
+  getById(id: number): Promise<Pokemon>;
   getByIdWithSimilar(
     id: number,
     k: number
-  ): Effect.Effect<{ pokemon: Pokemon; similar: Pokemon[] }, Error>;
+  ): Promise<{ pokemon: Pokemon; similar: Pokemon[] }>;
 }

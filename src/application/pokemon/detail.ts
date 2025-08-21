@@ -1,8 +1,6 @@
 import { Effect, Schema as S } from 'effect';
-import {
-  type PokemonRepository,
-  NotFound as RepoNotFound,
-} from '@/domain/repositories/PokemonRepository';
+import { NotFound as RepoNotFound } from '@/domain/repositories/PokemonRepository';
+import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
 import { invalidInput, notFound } from '../errors';
 
 export const PathSchema = S.Struct({ id: S.NumberFromString });
@@ -18,7 +16,7 @@ export interface Input {
   query: QueryInput;
 }
 
-export function detail(repo: PokemonRepository, input: Input) {
+export function detail(repo: EffectPokemonRepository, input: Input) {
   const eff = S.decodeUnknown(PathSchema)(input.path).pipe(
     Effect.mapError((e) => invalidInput(String(e))),
     Effect.flatMap((p: Path) =>

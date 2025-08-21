@@ -1,5 +1,5 @@
 import { Effect, Schema as S } from 'effect';
-import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
 import type { Pokemon } from '@/domain/pokemon';
 import { invalidInput } from '../errors';
 import { toBoolLike } from '@/domain/bool';
@@ -87,7 +87,7 @@ function compareByPairs(a: Pokemon, b: Pokemon, pairs: SortPair[]): number {
   return 0;
 }
 
-export function list(repo: PokemonRepository, input: QueryInput) {
+export function list(repo: EffectPokemonRepository, input: QueryInput) {
   const eff = S.decodeUnknown(QuerySchema)(input).pipe(
     Effect.mapError((e) => invalidInput(String(e))),
     Effect.flatMap((q: Query) =>

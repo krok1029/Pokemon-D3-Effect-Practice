@@ -1,5 +1,5 @@
 import path from 'node:path';
-import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
 import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
 function resolveDataPath(): string {
@@ -13,16 +13,16 @@ function resolveDataPath(): string {
   );
 }
 
-export function createPokemonRepository(): PokemonRepository {
+export function createPokemonRepository(): EffectPokemonRepository {
   return new PokemonRepositoryCsv(resolveDataPath());
 }
 
-let repository: PokemonRepository = createPokemonRepository();
+let repository: EffectPokemonRepository = createPokemonRepository();
 
-export function getPokemonRepository(): PokemonRepository {
+export function getPokemonRepository(): EffectPokemonRepository {
   return repository;
 }
 
-export function setPokemonRepository(repo: PokemonRepository): void {
+export function setPokemonRepository(repo: EffectPokemonRepository): void {
   repository = repo;
 }

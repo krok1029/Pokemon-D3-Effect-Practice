@@ -3,11 +3,11 @@ import { NextRequest } from 'next/server';
 import { Effect } from 'effect';
 import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
 import type { Pokemon } from '@/domain/pokemon';
-import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
 import { setPokemonRepository, createPokemonRepository } from '@/infrastructure/config';
 import { GET } from '@/app/api/pokemon/route';
 
-class MockRepo implements PokemonRepository {
+class MockRepo implements EffectPokemonRepository {
   constructor(private readonly data: Pokemon[]) {}
   getAll() {
     return Effect.succeed(this.data);
@@ -16,7 +16,7 @@ class MockRepo implements PokemonRepository {
     const p = this.data.find((x) => x.id === id);
     return p ? Effect.succeed(p) : Effect.fail(new Error('not found'));
   }
-  getByIdWithSimilar(id: number, k: number) {
+  getByIdWithSimilar(id: number, _k: number) {
     const p = this.data.find((x) => x.id === id);
     if (!p) return Effect.fail(new Error('not found'));
     return Effect.succeed({ pokemon: p, similar: [] });
@@ -55,7 +55,7 @@ describe('API route uses configured repository', () => {
     setPokemonRepository(new MockRepo([dummyPokemon(1234)]));
     const req = new NextRequest('http://test.local/api/pokemon');
     const res = await GET(req);
-    const json: any = await res.json();
+    const json = (await res.json()) as { data: Pokemon[] };
     expect(json.data[0].id).toBe(1234);
   });
 });

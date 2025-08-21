@@ -3,8 +3,8 @@ import { Effect } from 'effect';
 import { readCsv } from '@/infrastructure/csv/CsvService';
 import type { Pokemon } from '@/domain/pokemon';
 import { parsePokemonCsv, toPokemon } from '@/infrastructure/csv/pokemonCsv';
-import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
 import { NotFound } from '@/domain/repositories/PokemonRepository';
+import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
 
 export { NotFound } from '@/domain/repositories/PokemonRepository';
 
@@ -22,7 +22,7 @@ function distance(a: Pokemon, b: Pokemon): number {
   return Math.sqrt(sum);
 }
 
-export class PokemonRepositoryCsv implements PokemonRepository {
+export class PokemonRepositoryCsv implements EffectPokemonRepository {
   private readonly data: Promise<ReadonlyArray<Pokemon>>;
 
   constructor(private readonly path: string) {
