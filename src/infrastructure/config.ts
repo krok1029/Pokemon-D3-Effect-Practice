@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { Effect } from 'effect';
 import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
 import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
@@ -14,7 +15,12 @@ function resolveDataPath(): string {
 }
 
 export function createPokemonRepository(): EffectPokemonRepository {
-  return new PokemonRepositoryCsv(resolveDataPath());
+  const repo = new PokemonRepositoryCsv(resolveDataPath());
+  Effect.runPromise(repo.init()).catch((e) => {
+    // eslint-disable-next-line no-console
+    console.error('Failed to initialize PokemonRepositoryCsv', e);
+  });
+  return repo;
 }
 
 let repository: EffectPokemonRepository = createPokemonRepository();

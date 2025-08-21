@@ -27,25 +27,26 @@ function distance(a: Pokemon, b: Pokemon): number {
 }
 
 export class PokemonRepositoryCsv implements EffectPokemonRepository {
-  private readonly data: Promise<ReadonlyArray<Pokemon>>;
+  private data: ReadonlyArray<Pokemon> | undefined;
 
-  constructor(private readonly path: string) {
-    const promise = Effect.runPromise(
-      readCsv(path).pipe(
-        Effect.flatMap(parsePokemonCsv),
-        Effect.map((rows) => rows.map(toPokemon))
-      )
-    );
-    // avoid unhandled rejection warnings
-    promise.catch(() => {});
-    this.data = promise;
+  constructor(private readonly path: string) {}
+
+  /** 預先載入資料以 warm up 快取 */
+  init(): Effect.Effect<void, Error> {
+    return this.load(true).pipe(Effect.asVoid);
   }
 
-  private load(): Effect.Effect<ReadonlyArray<Pokemon>, Error> {
-    return Effect.tryPromise({
-      try: () => this.data,
-      catch: (e) => e as Error,
-    });
+  private load(force = false): Effect.Effect<ReadonlyArray<Pokemon>, Error> {
+    if (!force && this.data) {
+      return Effect.succeed(this.data);
+    }
+    return readCsv(this.path).pipe(
+      Effect.flatMap(parsePokemonCsv),
+      Effect.map((rows) => rows.map(toPokemon)),
+      Effect.tap((rows) => {
+        this.data = rows;
+      })
+    );
   }
 
   getAll(): Effect.Effect<ReadonlyArray<Pokemon>, Error> {
