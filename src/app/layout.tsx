@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Image from 'next/image';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 const container =
-  'mx-auto w-full px-4 sm:px-6 lg:px-8 max-w-[95vw] 2xl:max-w-[1800px]';
+  'mx-auto w-full px-4 sm:px-6 lg:px-8 max-w-[95vw] 2xl:max-w-[1800px] my-4';
 export default function RootLayout({
   children,
 }: {
@@ -87,11 +88,17 @@ export default function RootLayout({
           </div>
         </header>
 
-        {/* 主內容 */}
-        <main id="main" className={container}>
-          {children}
-        </main>
-
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {/* 主內容 */}
+          <main id="main" className={container}>
+            {children}
+          </main>
+        </ThemeProvider>
         {/* Footer */}
         <footer className="mt-16 border-t border-slate-200/70 py-8 dark:border-slate-800">
           <div className={container}>
