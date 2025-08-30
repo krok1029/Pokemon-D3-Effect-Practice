@@ -1,5 +1,6 @@
 import { Effect, Schema as S } from 'effect';
-import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
+import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import { PokemonRepositoryEffectAdapter } from '@/application/repositories/PokemonRepositoryEffectAdapter';
 import { invalidInput } from '../errors';
 import { toBoolLike } from '@/domain/bool';
 
@@ -14,7 +15,8 @@ export const QuerySchema = S.Struct({
 export type Query = S.Schema.Type<typeof QuerySchema>;
 export type QueryInput = S.Schema.Encoded<typeof QuerySchema>;
 
-export function list(repo: EffectPokemonRepository, input: QueryInput) {
+export function list(repo: PokemonRepository, input: QueryInput) {
+  const repoEff = new PokemonRepositoryEffectAdapter(repo);
   const eff = S.decodeUnknown(QuerySchema)(input).pipe(
     Effect.mapError((e) => invalidInput(String(e))),
     Effect.flatMap((q: Query) => {
@@ -26,7 +28,7 @@ export function list(repo: EffectPokemonRepository, input: QueryInput) {
         pageSize: q.pageSize,
         sort: q.sort,
       };
-      return repo.list(params);
+      return repoEff.list(params);
     })
   );
   return Effect.either(eff);

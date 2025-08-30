@@ -1,28 +1,32 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { Effect } from 'effect';
 import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
 import type { Pokemon } from '@/domain/pokemon';
-import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
+import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
 import { setPokemonRepository, createPokemonRepository } from '@/infrastructure/config';
 import { GET } from '@/app/api/pokemon/route';
 
-class MockRepo implements EffectPokemonRepository {
+class MockRepo implements PokemonRepository {
   constructor(private readonly data: Pokemon[]) {}
   getAll() {
-    return Effect.succeed(this.data);
+    return Promise.resolve(this.data);
   }
   getById(id: number) {
     const p = this.data.find((x) => x.id === id);
-    return p ? Effect.succeed(p) : Effect.fail(new Error('not found'));
+    return p ? Promise.resolve(p) : Promise.reject(new Error('not found'));
   }
   getByIdWithSimilar(id: number, _k: number) {
     const p = this.data.find((x) => x.id === id);
-    if (!p) return Effect.fail(new Error('not found'));
-    return Effect.succeed({ pokemon: p, similar: [] });
+    if (!p) return Promise.reject(new Error('not found'));
+    return Promise.resolve({ pokemon: p, similar: [] });
   }
   list() {
-    return Effect.succeed({ total: this.data.length, page: 1, pageSize: this.data.length, data: this.data });
+    return Promise.resolve({
+      total: this.data.length,
+      page: 1,
+      pageSize: this.data.length,
+      data: this.data,
+    });
   }
 }
 

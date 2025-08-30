@@ -1,6 +1,9 @@
 import { Effect, Schema as S } from 'effect';
-import { NotFound as RepoNotFound } from '@/domain/repositories/PokemonRepository';
-import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
+import {
+  NotFound as RepoNotFound,
+  type PokemonRepository,
+} from '@/domain/repositories/PokemonRepository';
+import { PokemonRepositoryEffectAdapter } from '@/application/repositories/PokemonRepositoryEffectAdapter';
 import { invalidInput, notFound } from '../errors';
 
 export const PathSchema = S.Struct({ id: S.NumberFromString });
@@ -16,16 +19,19 @@ export interface Input {
   query: QueryInput;
 }
 
-export function detail(repo: EffectPokemonRepository, input: Input) {
+export function detail(repo: PokemonRepository, input: Input) {
+  const repoEff = new PokemonRepositoryEffectAdapter(repo);
   const eff = S.decodeUnknown(PathSchema)(input.path).pipe(
     Effect.mapError((e) => invalidInput(String(e))),
     Effect.flatMap((p: Path) =>
       S.decodeUnknown(QuerySchema)(input.query).pipe(
         Effect.mapError((e) => invalidInput(String(e))),
         Effect.flatMap((q: Query) =>
-          repo.getByIdWithSimilar(p.id, q.k ?? 5).pipe(
-            Effect.mapError((e) =>
-              e instanceof RepoNotFound ? notFound(e.message) : invalidInput(String(e))
+          repoEff.getByIdWithSimilar(p.id, q.k ?? 5).pipe(
+            Effect.mapError((e: unknown) =>
+              e instanceof RepoNotFound
+                ? notFound((e as RepoNotFound).message)
+                : invalidInput(String(e))
             )
           )
         )

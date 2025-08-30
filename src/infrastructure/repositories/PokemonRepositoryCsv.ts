@@ -4,11 +4,11 @@ import { readCsv } from '@/infrastructure/csv/CsvService';
 import type { Pokemon } from '@/domain/pokemon';
 import { parsePokemonCsv, toPokemon } from '@/infrastructure/csv/pokemonCsv';
 import {
+  PokemonRepository,
   NotFound,
   PokemonListParams,
   PokemonListResult,
 } from '@/domain/repositories/PokemonRepository';
-import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
 
 export { NotFound } from '@/domain/repositories/PokemonRepository';
 
@@ -26,65 +26,61 @@ function distance(a: Pokemon, b: Pokemon): number {
   return Math.sqrt(sum);
 }
 
-export class PokemonRepositoryCsv implements EffectPokemonRepository {
+export class PokemonRepositoryCsv implements PokemonRepository {
   private data: ReadonlyArray<Pokemon> | undefined;
 
   constructor(private readonly path: string) {}
 
   /** 預先載入資料以 warm up 快取 */
-  init(): Effect.Effect<void, Error> {
-    return this.load(true).pipe(Effect.asVoid);
+  async init(): Promise<void> {
+    await this.load(true);
   }
 
-  private load(force = false): Effect.Effect<ReadonlyArray<Pokemon>, Error> {
+  private async load(force = false): Promise<ReadonlyArray<Pokemon>> {
     if (!force && this.data) {
-      return Effect.succeed(this.data);
+      return this.data;
     }
-    return readCsv(this.path).pipe(
-      Effect.flatMap(parsePokemonCsv),
-      Effect.map((rows) => rows.map(toPokemon)),
-      Effect.tap((rows) => {
-        this.data = rows;
-      })
+    const rows = await Effect.runPromise(
+      readCsv(this.path).pipe(
+        Effect.flatMap(parsePokemonCsv),
+        Effect.map((rows) => rows.map(toPokemon)),
+      )
     );
+    this.data = rows;
+    return rows;
   }
 
-  getAll(): Effect.Effect<ReadonlyArray<Pokemon>, Error> {
+  getAll(): Promise<ReadonlyArray<Pokemon>> {
     return this.load();
   }
 
-  getById(id: number): Effect.Effect<Pokemon, Error> {
-    return this.load().pipe(
-      Effect.map((rows) => rows.find((p) => p.id === id)),
-      Effect.flatMap((p) =>
-        p ? Effect.succeed(p) : Effect.fail(new NotFound(`Pokemon ${id} not found`))
-      )
-    );
-  }
+  async getById(id: number): Promise<Pokemon> {
+    const rows = await this.load();
+    const p = rows.find((p) => p.id === id);
+    if (!p) throw new NotFound(`Pokemon ${id} not found`);
+    return p;
+    }
 
-  getByIdWithSimilar(
+  async getByIdWithSimilar(
     id: number,
     k = 5
-  ): Effect.Effect<{ pokemon: Pokemon; similar: Pokemon[] }, Error> {
+  ): Promise<{ pokemon: Pokemon; similar: Pokemon[] }> {
     const kk = Math.max(0, Math.min(50, Math.floor(k)));
-    return this.load().pipe(
-      Effect.flatMap((rows) => {
-        const self = rows.find((p) => p.id === id);
-        if (!self) return Effect.fail(new NotFound(`Pokemon ${id} not found`));
+    const rows = await this.load();
+    const self = rows.find((p) => p.id === id);
+    if (!self) throw new NotFound(`Pokemon ${id} not found`);
 
-        const sim = rows
-          .filter((p) => p.id !== id)
-          .map((p) => ({ p, dist: distance(self, p) }))
-          .sort((a, b) => a.dist - b.dist)
-          .slice(0, kk)
-          .map((x) => x.p);
+    const sim = rows
+      .filter((p) => p.id !== id)
+      .map((p) => ({ p, dist: distance(self, p) }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, kk)
+      .map((x) => x.p);
 
-        return Effect.succeed({ pokemon: self, similar: sim });
-      })
-    );
+    return { pokemon: self, similar: sim };
   }
 
-  list(params: PokemonListParams): Effect.Effect<PokemonListResult, Error> {
+  async list(params: PokemonListParams): Promise<PokemonListResult> {
     const ALLOWED_SORT_KEYS = new Set<keyof Pokemon>([
       'id',
       'name',
@@ -155,30 +151,27 @@ export class PokemonRepositoryCsv implements EffectPokemonRepository {
       return 0;
     }
 
-    return this.load().pipe(
-      Effect.map((rows) => {
-        let xs = rows.slice();
+    const rows = await this.load();
+    let xs = rows.slice();
 
-        if (params.q) {
-          const qq = params.q.toLowerCase();
-          xs = xs.filter((p) => p.name.toLowerCase().includes(qq));
-        }
-        if (typeof params.legendary === 'boolean') {
-          xs = xs.filter((p) => p.legendary === params.legendary);
-        }
+    if (params.q) {
+      const qq = params.q.toLowerCase();
+      xs = xs.filter((p) => p.name.toLowerCase().includes(qq));
+    }
+    if (typeof params.legendary === 'boolean') {
+      xs = xs.filter((p) => p.legendary === params.legendary);
+    }
 
-        const sortPairs = parseSortParam(params.sort);
-        if (sortPairs.length > 0) {
-          xs.sort((a, b) => compareByPairs(a, b, sortPairs));
-        }
+    const sortPairs = parseSortParam(params.sort);
+    if (sortPairs.length > 0) {
+      xs.sort((a, b) => compareByPairs(a, b, sortPairs));
+    }
 
-        const page = Math.max(1, params.page ?? 1);
-        const pageSize = Math.min(200, Math.max(1, params.pageSize ?? 50));
-        const start = (page - 1) * pageSize;
-        const data = xs.slice(start, start + pageSize);
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.min(200, Math.max(1, params.pageSize ?? 50));
+    const start = (page - 1) * pageSize;
+    const data = xs.slice(start, start + pageSize);
 
-        return { total: xs.length, page, pageSize, data };
-      })
-    );
+    return { total: xs.length, page, pageSize, data };
   }
 }

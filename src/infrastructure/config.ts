@@ -1,6 +1,5 @@
 import path from 'node:path';
-import { Effect } from 'effect';
-import type { EffectPokemonRepository } from '@/application/repositories/EffectPokemonRepository';
+import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
 import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
 
 function resolveDataPath(): string {
@@ -14,21 +13,20 @@ function resolveDataPath(): string {
   );
 }
 
-export function createPokemonRepository(): EffectPokemonRepository {
+export function createPokemonRepository(): PokemonRepository {
   const repo = new PokemonRepositoryCsv(resolveDataPath());
-  Effect.runPromise(repo.init()).catch((e) => {
-    // eslint-disable-next-line no-console
+  repo.init().catch((e) => {
     console.error('Failed to initialize PokemonRepositoryCsv', e);
   });
   return repo;
 }
 
-let repository: EffectPokemonRepository = createPokemonRepository();
+let repository: PokemonRepository = createPokemonRepository();
 
-export function getPokemonRepository(): EffectPokemonRepository {
+export function getPokemonRepository(): PokemonRepository {
   return repository;
 }
 
-export function setPokemonRepository(repo: EffectPokemonRepository): void {
+export function setPokemonRepository(repo: PokemonRepository): void {
   repository = repo;
 }
