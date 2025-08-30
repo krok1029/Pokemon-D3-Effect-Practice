@@ -14,11 +14,16 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "csv-parse": "^6.1.0",
     "effect": "^3.17.7",
+    "lucide-react": "^0.542.0",
     "next": "15.4.6",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "shadcn": "^3.0.0",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -35,16 +40,20 @@
     "jsdom": "^26.1.0",
     "playwright": "^1.54.2",
     "tailwindcss": "^4",
+    "tw-animate-css": "^1.3.7",
     "typescript": "^5",
     "vitest": "^3.2.4"
   },
   "cspell": {
     "version": "0.2",
-    "ignorePaths": ["data/pokemonCsv.csv"],
+    "ignorePaths": [
+      "data/pokemonCsv.csv"
+    ],
     "dictionaryDefinitions": [],
     "dictionaries": [],
     "words": [],
     "ignoreWords": [],
     "import": []
-  }
+  },
+  "packageManager": "yarn@4.9.4"
 }
