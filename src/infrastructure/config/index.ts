@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import path from 'node:path';
 import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
 import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
