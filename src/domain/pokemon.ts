@@ -1,6 +1,6 @@
 import { TYPES, type TypeName, type Multiplier } from './types';
 
-// ---- Value Objects ----
+// ---- 值物件（Value Objects）----
 export type PokemonId = number;
 
 export interface PokemonStats {
@@ -15,7 +15,7 @@ export interface PokemonStats {
   sd?: number;
 }
 
-// ---- Entity ----
+// ---- 實體（Entity）----
 export interface Pokemon extends PokemonStats {
   id: PokemonId;
   name: string;
@@ -37,14 +37,14 @@ export interface Pokemon extends PokemonStats {
   bmi?: number;
 }
 
-// ---- Pure domain logic ----
+// ---- 純網域邏輯（無 I/O）----
 export function parseAbilities(raw: string | null | undefined): string[] {
   if (!raw) return [];
   const tokens = raw
     .split(/[;,]/g)
     .map((s) => s.trim())
     .filter(Boolean);
-  const seen = new Set<string>(); // lowercase for dedupe
+  const seen = new Set<string>(); // 全轉小寫以利去重
   const out: string[] = [];
   for (const t of tokens) {
     const key = t.toLowerCase();

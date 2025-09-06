@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Effect } from 'effect';
 import { list, QueryInput } from '@/application/pokemon/list';
-import '@/infrastructure/config'; // ensure DI container is initialized
+import '@/infrastructure/config'; // 初始化 DI 容器（Composition Root）
 import { container } from 'tsyringe';
 import { TOKENS } from '@/di/tokens';
 
-// 把 URLSearchParams → QueryInput
+// 將 URLSearchParams 轉換為 UseCase 的 QueryInput
 function getQueryInput(req: NextRequest): QueryInput {
   const url = new URL(req.url);
   return Object.fromEntries(url.searchParams.entries()) as QueryInput;
 }
 
-// API route
+// API 路由：只負責解析 → 呼叫 UseCase → 執行 Effect → 回應
 export async function GET(req: NextRequest) {
   const repo = container.resolve(TOKENS.PokemonRepository);
   const result = await Effect.runPromise(list(repo, getQueryInput(req)));

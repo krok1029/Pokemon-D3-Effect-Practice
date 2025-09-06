@@ -1,4 +1,4 @@
-// src/infrastructure/csv/pokemonCsv.ts
+// 基礎設施層：Pokemon CSV 解析與映射
 import { Effect } from 'effect';
 import * as S from 'effect/Schema';
 import { DataLoadError } from './CsvService';
@@ -9,7 +9,7 @@ import {
   type Pokemon,
 } from '@/domain/pokemon';
 import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
-import { toBoolLike } from '@/domain/bool';
+import { toBoolLike } from '@/shared/bool';
 
 const NumStr = S.NumberFromString;
 

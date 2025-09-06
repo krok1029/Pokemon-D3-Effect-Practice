@@ -1,4 +1,4 @@
-// src/infrastructure/repositories/PokemonRepositoryCsv.ts
+// 基礎設施層：以 CSV 作為資料來源的 Pokemon Repository 實作
 import { Effect } from 'effect';
 import { readCsv } from '@/infrastructure/csv/CsvService';
 import type { Pokemon } from '@/domain/pokemon';

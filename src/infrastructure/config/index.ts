@@ -24,7 +24,7 @@ export function createPokemonRepository(): PokemonRepository {
 }
 
 let repository: PokemonRepository = createPokemonRepository();
-// Keep DI container in sync with the current repository
+// 確保 DI 容器中的綁定與目前的 Repository 實例保持一致
 container.registerInstance(TOKENS.PokemonRepository, repository);
 
 export function getPokemonRepository(): PokemonRepository {

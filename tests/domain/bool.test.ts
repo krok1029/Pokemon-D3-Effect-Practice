@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toBoolLike } from '@/domain/bool';
+import { toBoolLike } from '@/shared/bool';
 describe('toBoolLike', () => {
   const truthy = ['true', '1', '1.0', 'yes', 'y'];
   const falsy = ['false', '0', '0.0', 'no', 'n'];

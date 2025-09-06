@@ -1,8 +1,5 @@
 import { Effect, Schema as S } from 'effect';
-import {
-  NotFound as RepoNotFound,
-  type PokemonRepository,
-} from '@/domain/repositories/PokemonRepository';
+import { NotFound as RepoNotFound, type PokemonRepository } from '@/domain/repositories/PokemonRepository';
 import { PokemonRepositoryEffectAdapter } from '@/application/repositories/PokemonRepositoryEffectAdapter';
 import { invalidInput, notFound } from '../errors';
 

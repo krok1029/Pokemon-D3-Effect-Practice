@@ -1,4 +1,4 @@
-// src/infrastructure/csv/CsvService.ts
+// 基礎設施層：CSV 讀取服務（純 I/O 工具）
 import { Effect } from 'effect';
 import fs from 'node:fs/promises';
 import { parse } from 'csv-parse/sync';

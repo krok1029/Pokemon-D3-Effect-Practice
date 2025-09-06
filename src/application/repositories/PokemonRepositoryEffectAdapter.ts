@@ -1,5 +1,8 @@
 import { Effect } from 'effect';
-import type { PokemonRepository, PokemonListParams } from '@/domain/repositories/PokemonRepository';
+import type {
+  PokemonRepository,
+  PokemonListParams,
+} from '@/domain/repositories/PokemonRepository';
 
 export class PokemonRepositoryEffectAdapter {
   constructor(private readonly repo: PokemonRepository) {}

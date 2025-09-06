@@ -1,8 +1,8 @@
-// src/app/api/pokemon/[id]/route.ts
+// API 路由：/api/pokemon/[id]
 import { NextRequest, NextResponse } from 'next/server';
 import { Effect } from 'effect';
 import { detail, PathInput, QueryInput } from '@/application/pokemon/detail';
-import '@/infrastructure/config'; // ensure DI container is initialized
+import '@/infrastructure/config'; // 初始化 DI 容器（Composition Root）
 import { container } from 'tsyringe';
 import { TOKENS } from '@/di/tokens';
 
