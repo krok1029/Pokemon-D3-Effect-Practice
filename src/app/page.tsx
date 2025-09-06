@@ -21,20 +21,43 @@ export default async function Home() {
   }
 
   return (
-    <Card className='w-64'>
-      <CardHeader>
-        <CardTitle className='text-nowrap'>網站統計寶可夢數：</CardTitle>
-        <CardDescription>
-          資料來源:
-          <Link className='px-1 text-cyan-700' href="https://github.com/Laetitia-Deken/Pokemon_Dataset_Exploratory">
-            GitHub
-          </Link>
-        </CardDescription>
-        <CardAction></CardAction>
-      </CardHeader>
-      <CardContent className="text-5xl font-extrabold text-end">
-        {result.right.total}
-      </CardContent>
-    </Card>
+    <div className='flex flex-wrap gap-4'> 
+      <Card className="w-64">
+        <CardHeader>
+          <CardTitle className="text-nowrap">網站統計寶可夢數：</CardTitle>
+          <CardDescription>
+            資料來源:
+            <Link
+              className="px-1 text-cyan-700"
+              href="https://github.com/Laetitia-Deken/Pokemon_Dataset_Exploratory"
+            >
+              GitHub
+            </Link>
+          </CardDescription>
+          <CardAction></CardAction>
+        </CardHeader>
+        <CardContent className="text-5xl font-extrabold text-end">
+          {result.right.total}
+        </CardContent>
+      </Card>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-nowrap">平均六維：</CardTitle>
+          <CardDescription>
+            資料來源:
+            <Link
+              className="px-1 text-cyan-700"
+              href="https://github.com/Laetitia-Deken/Pokemon_Dataset_Exploratory"
+            >
+              GitHub
+            </Link>
+          </CardDescription>
+          <CardAction></CardAction>
+        </CardHeader>
+        <CardContent className="text-5xl font-extrabold text-end">
+          {result.right.total}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
