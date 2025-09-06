@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import '@/infrastructure/config'; // ensure DI container is initialized
-import { container } from '@/di/container';
+import { container } from 'tsyringe';
 import { TOKENS } from '@/di/tokens';
 import { Effect } from 'effect';
 import Link from 'next/link';

@@ -1,8 +1,6 @@
+import type { InjectionToken } from 'tsyringe';
+import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+
 export const TOKENS = {
-  PokemonRepository: Symbol('PokemonRepository'),
+  PokemonRepository: Symbol('PokemonRepository') as InjectionToken<PokemonRepository>,
 };
-
-export type TokenMap = {
-  [TOKENS.PokemonRepository]: import('@/domain/repositories/PokemonRepository').PokemonRepository;
-};
-

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Effect } from 'effect';
 import { list, QueryInput } from '@/application/pokemon/list';
 import '@/infrastructure/config'; // ensure DI container is initialized
-import { container } from '@/di/container';
+import { container } from 'tsyringe';
 import { TOKENS } from '@/di/tokens';
 
 // 把 URLSearchParams → QueryInput

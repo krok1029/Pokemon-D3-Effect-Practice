@@ -1,7 +1,7 @@
 import path from 'node:path';
 import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
 import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
-import { container } from '@/di/container';
+import { container } from 'tsyringe';
 import { TOKENS } from '@/di/tokens';
 
 function resolveDataPath(): string {

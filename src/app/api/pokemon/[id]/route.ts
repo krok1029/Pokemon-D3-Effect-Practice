@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Effect } from 'effect';
 import { detail, PathInput, QueryInput } from '@/application/pokemon/detail';
 import '@/infrastructure/config'; // ensure DI container is initialized
-import { container } from '@/di/container';
+import { container } from 'tsyringe';
 import { TOKENS } from '@/di/tokens';
 
 function getPathInput(params: { id: string }): PathInput {
