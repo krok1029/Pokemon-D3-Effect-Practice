@@ -1,12 +1,10 @@
 // src/app/api/pokemon/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { Effect } from 'effect';
-import {
-  detail,
-  PathInput,
-  QueryInput,
-} from '@/application/pokemon/detail';
-import { getPokemonRepository } from '@/infrastructure/config';
+import { detail, PathInput, QueryInput } from '@/application/pokemon/detail';
+import '@/infrastructure/config'; // ensure DI container is initialized
+import { container } from '@/di/container';
+import { TOKENS } from '@/di/tokens';
 
 function getPathInput(params: { id: string }): PathInput {
   return { id: params.id };
@@ -18,7 +16,7 @@ function getQueryInput(req: NextRequest): QueryInput {
 }
 
 export async function GET(req: NextRequest, ctx: { params: { id: string } }) {
-  const repo = getPokemonRepository();
+  const repo = container.resolve(TOKENS.PokemonRepository);
   const result = await Effect.runPromise(
     detail(repo, { path: getPathInput(ctx.params), query: getQueryInput(req) })
   );

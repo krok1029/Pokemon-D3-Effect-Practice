@@ -1,6 +1,8 @@
 import path from 'node:path';
 import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
 import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
+import { container } from '@/di/container';
+import { TOKENS } from '@/di/tokens';
 
 function resolveDataPath(): string {
   const envPath = process.env.POKEMON_DATA_PATH;
@@ -22,6 +24,8 @@ export function createPokemonRepository(): PokemonRepository {
 }
 
 let repository: PokemonRepository = createPokemonRepository();
+// Keep DI container in sync with the current repository
+container.registerInstance(TOKENS.PokemonRepository, repository);
 
 export function getPokemonRepository(): PokemonRepository {
   return repository;
@@ -29,4 +33,5 @@ export function getPokemonRepository(): PokemonRepository {
 
 export function setPokemonRepository(repo: PokemonRepository): void {
   repository = repo;
+  container.registerInstance(TOKENS.PokemonRepository, repo);
 }

@@ -8,12 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { getPokemonRepository } from '@/infrastructure/config';
+import '@/infrastructure/config'; // ensure DI container is initialized
+import { container } from '@/di/container';
+import { TOKENS } from '@/di/tokens';
 import { Effect } from 'effect';
 import Link from 'next/link';
 
 export default async function Home() {
-  const repo = getPokemonRepository();
+  const repo = container.resolve(TOKENS.PokemonRepository);
   const result = await Effect.runPromise(list(repo, {}));
 
   if (result._tag === 'Left') {
