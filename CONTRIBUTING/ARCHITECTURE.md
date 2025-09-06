@@ -8,7 +8,7 @@ UI / Presentation（Next.js）
 - 頁面（App Router）、API 路由（Route Handlers）
 - 解析輸入、組出 UseCase 的 Effect、在邊界以 `Effect.runPromise` 執行
 
-Application（Use Cases / Services）
+Application（Use Cases）
 - 流程協調與輸入驗證
 - 僅依賴 Domain 的 Port（介面）
 - 將 infra/domain 的錯誤映射成應用層錯誤
@@ -29,8 +29,7 @@ Infrastructure（Adapters）
 src/
 - app/：UI 層（頁面與 API 路由）。執行 effects 並渲染。
 - application/：用例與應用層錯誤。
-  - pokemon/：`list.ts`、`detail.ts`（驗證、協調、錯誤映射）
-  - repositories/：`*EffectAdapter.ts` 將網域 repo（Promise）包成 Effect
+  - pokemon/：`list.ts`、`detail.ts`（驗證、協調、錯誤映射）。用例內部以 `Effect.tryPromise` 直接包裝 Repository（Promise）呼叫。
   - errors.ts：應用層錯誤型別
 - domain/：純網域模型與 Port
   - pokemon.ts, types.ts
@@ -43,6 +42,7 @@ src/
 ## Effect 與執行
 
 - Application 回傳 Effect；UI 在邊界（頁面或路由）建構並執行（`Effect.runPromise`）。
+- 用例內部使用 `Effect.tryPromise(() => repo.method(...))` 將 Repository 的 Promise 納入 Effect 流程。
 - 保持型別明確：用例回傳 `Effect.either(effect)`，錯誤使用應用層錯誤型別。
 
 ## DI（tsyringe）
@@ -50,6 +50,7 @@ src/
 - Composition Root：`src/infrastructure/config/index.ts`
 - UI 入口需引入一次以初始化：`import '@/infrastructure/config'`
 - UI 邊界解析：`const repo = container.resolve(TOKENS.PokemonRepository)`
+- 反射 polyfill：測試環境於 `tests/setup.ts` 匯入 `reflect-metadata`，避免各處重複匯入。
 
 ## 錯誤映射
 
@@ -62,3 +63,4 @@ src/
 - Domain 與 shared：以純函式單元測試。
 - UseCase：以 stub repo 驗證輸入處理與錯誤映射。
 - 整合測試：串接實際 infra（CSV/DB）驗證端到端行為。
+- 全域測試設定：`tests/setup.ts` 匯入 `reflect-metadata`。
