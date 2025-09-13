@@ -8,4 +8,4 @@
 - `pokemon.ts`：Pokemon 的實體與相關純函式（如能力解析、倍率計算）。
 - `types.ts`：網域型別（如 TypeName、Multiplier 與合法集合）。
 - `repositories/`：網域層的 Repository 介面（Port），不包含任何 I/O 細節。
-
+- `constants.ts`：純 Domain 常數（例如 `MAX_STAT`）。
