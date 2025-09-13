@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Effect } from 'effect';
 import { readCsv } from '@/infrastructure/csv/CsvService';
 import { parsePokemonCsv } from '@/infrastructure/csv/pokemonCsv';
-import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
+import { PokemonRepositoryCsv } from '@/infrastructure/repo/PokemonRepositoryCsv';
 import { NotFound } from '@/domain/repositories/PokemonRepository';
 
 const FIXTURE = 'data/pokemon_fixture_30.csv';

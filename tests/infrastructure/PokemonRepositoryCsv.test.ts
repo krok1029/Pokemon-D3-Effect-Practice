@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs/promises';
-import { PokemonRepositoryCsv } from '@/infrastructure/repositories/PokemonRepositoryCsv';
+import { PokemonRepositoryCsv } from '@/infrastructure/repo/PokemonRepositoryCsv';
 
 const FIXTURE = 'data/pokemon_fixture_30.csv';
 

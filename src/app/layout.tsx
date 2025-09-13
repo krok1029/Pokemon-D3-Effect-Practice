@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import '@/infrastructure/config';
 import Link from 'next/link';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Image from 'next/image';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '@/ui/theme-provider';
 import 'reflect-metadata';
 
 const geistSans = Geist({

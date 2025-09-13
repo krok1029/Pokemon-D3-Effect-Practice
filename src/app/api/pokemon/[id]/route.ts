@@ -2,9 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Effect } from 'effect';
 import { detail, PathInput, QueryInput } from '@/application/pokemon/detail';
-import '@/infrastructure/config'; // 初始化 DI 容器（Composition Root）
-import { container } from 'tsyringe';
-import { TOKENS } from '@/di/tokens';
+import { getPokemonRepository } from '@/infrastructure/config';
 
 function getPathInput(params: { id: string }): PathInput {
   return { id: params.id };
@@ -16,7 +14,7 @@ function getQueryInput(req: NextRequest): QueryInput {
 }
 
 export async function GET(req: NextRequest, ctx: { params: { id: string } }) {
-  const repo = container.resolve(TOKENS.PokemonRepository);
+  const repo = getPokemonRepository();
   const result = await Effect.runPromise(
     detail(repo, { path: getPathInput(ctx.params), query: getQueryInput(req) })
   );
