@@ -34,15 +34,15 @@ src
 ├─ application/             # UseCases / DTO / Policies（Effect）
 │  ├─ errors.ts
 │  └─ pokemon/
-│     ├─ list.ts
-│     ├─ detail.ts
-│     └─ average.ts
+│     ├─ ListPokemons.ts
+│     ├─ GetPokemonDetail.ts
+│     └─ AverageStats.ts
 │
 ├─ domain/                  # Entity / ValueObject / Repository 介面
-│  ├─ pokemon.ts
-│  ├─ repositories/
-│  │  └─ PokemonRepository.ts
-│  ├─ types.ts
+│  ├─ pokemon/
+│  │  ├─ Pokemon.ts
+│  │  ├─ PokemonRepository.ts
+│  │  └─ types.ts
 │  └─ constants.ts
 │
 ├─ infrastructure/          # I/O、實作 Repository、DI
@@ -54,7 +54,7 @@ src
 │     └─ PokemonRepositoryCsv.ts
 │
 ├─ di/tokens.ts
-├─ lib/utils.ts
+├─ shared/utils.ts
 ├─ shared/bool.ts
 └─ tests/
    ├─ domain/*.test.ts

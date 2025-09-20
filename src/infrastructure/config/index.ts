@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import path from 'node:path';
-import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import type { PokemonRepository } from '@/domain/pokemon/PokemonRepository';
 import { PokemonRepositoryCsv } from '@/infrastructure/repo/PokemonRepositoryCsv';
 import { container } from 'tsyringe';
 import { TOKENS } from '@/di/tokens';

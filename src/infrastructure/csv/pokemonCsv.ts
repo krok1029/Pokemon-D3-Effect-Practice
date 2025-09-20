@@ -7,8 +7,8 @@ import {
   toTypeName,
   toMultiplier,
   type Pokemon,
-} from '@/domain/pokemon';
-import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
+} from '@/domain/pokemon/Pokemon';
+import { TYPES, type TypeName, type Multiplier } from '@/domain/pokemon/types';
 import { toBoolLike } from '@/shared/bool';
 
 const NumStr = S.NumberFromString;

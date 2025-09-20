@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { Effect, Either } from 'effect';
 import { PokemonRepositoryCsv } from '@/infrastructure/repo/PokemonRepositoryCsv';
-import { list } from '@/application/pokemon/list';
+import { list } from '@/application/pokemon/ListPokemons';
 
 const FIXTURE = 'data/pokemon_fixture_30.csv';
 

@@ -1,11 +1,10 @@
 import { Effect, Schema as S } from 'effect';
-import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import type { PokemonRepository } from '@/domain/pokemon/PokemonRepository';
 import { invalidInput } from '../errors';
 import { toBoolLike } from '@/shared/bool';
 
 // === Utilities ===
 function fmtSchemaError(e: unknown) {
-  // 若有安裝 effect/schema 的格式化工具可換成更漂亮的輸出
   return String(e);
 }
 
@@ -77,6 +76,6 @@ export function list(repo: PokemonRepository, input: QueryInput) {
     })
   );
 
-  // 回傳 Either 讓呼叫端好分支渲染
   return Effect.either(eff);
 }
+

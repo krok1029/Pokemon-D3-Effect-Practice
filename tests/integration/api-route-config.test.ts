@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { TYPES, type TypeName, type Multiplier } from '@/domain/types';
-import type { Pokemon } from '@/domain/pokemon';
-import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import { TYPES, type TypeName, type Multiplier } from '@/domain/pokemon/types';
+import type { Pokemon } from '@/domain/pokemon/Pokemon';
+import type { PokemonRepository } from '@/domain/pokemon/PokemonRepository';
 import { setPokemonRepository, createPokemonRepository } from '@/infrastructure/config';
 import { GET } from '@/app/api/pokemon/route';
 

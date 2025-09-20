@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import type { PokemonRepository } from '@/domain/repositories/PokemonRepository';
+import type { PokemonRepository } from '@/domain/pokemon/PokemonRepository';
 
 // 僅限 UI 需要的六圍鍵
 const METRICS = [
@@ -17,11 +17,6 @@ export type AverageStats = {
   avgs: Array<{ key: StatKey; value: number }>;
 };
 
-/**
- * Use case：計算所有寶可夢的六圍平均
- * - Application 層：協調 Repository I/O 與純計算
- * - Domain/純函式：於此檔內完成（不涉 UI Label）
- */
 export function average(repo: PokemonRepository) {
   const eff = Effect.tryPromise(() => repo.getAll()).pipe(
     Effect.map((rows) => {
@@ -29,8 +24,7 @@ export function average(repo: PokemonRepository) {
       const sums = { hp: 0, attack: 0, defense: 0, sp_atk: 0, sp_def: 0, speed: 0 } as Record<StatKey, number>;
       for (const p of rows) {
         for (const k of METRICS) {
-          // p[k] 是 number（依據 Domain 型別），這裡直接加總
-          sums[k] += (p as any)[k] as number; // 型別為窄化方便，可改成顯式 Pick
+          sums[k] += (p as any)[k] as number;
         }
       }
       const avgs = METRICS.map((k) => ({

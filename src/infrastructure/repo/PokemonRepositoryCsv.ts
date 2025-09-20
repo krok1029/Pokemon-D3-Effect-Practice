@@ -1,16 +1,16 @@
 // 基礎設施層：以 CSV 作為資料來源的 Pokemon Repository 實作
 import { Effect } from 'effect';
 import { readCsv } from '@/infrastructure/csv/CsvService';
-import type { Pokemon } from '@/domain/pokemon';
+import type { Pokemon } from '@/domain/pokemon/Pokemon';
 import { parsePokemonCsv, toPokemon } from '@/infrastructure/csv/pokemonCsv';
 import {
   PokemonRepository,
   NotFound,
   PokemonListParams,
   PokemonListResult,
-} from '@/domain/repositories/PokemonRepository';
+} from '@/domain/pokemon/PokemonRepository';
 
-export { NotFound } from '@/domain/repositories/PokemonRepository';
+export { NotFound } from '@/domain/pokemon/PokemonRepository';
 
 /** 相似度計算（六圍的歐氏距離） */
 const METRICS: ReadonlyArray<

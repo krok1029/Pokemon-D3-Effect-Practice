@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import { getPokemonRepository } from '@/infrastructure/config';
-import { average } from '@/application/pokemon/average';
+import { average } from '@/application/pokemon/AverageStats';
 import AverageStatsCard from '../components/AverageStatsCard';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/ui/uikit/card';
 
@@ -20,4 +20,3 @@ export default async function AverageStatsContainer() {
   }
   return <AverageStatsCard data={res.right} />;
 }
-

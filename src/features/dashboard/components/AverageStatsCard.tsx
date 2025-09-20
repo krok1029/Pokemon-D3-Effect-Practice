@@ -1,4 +1,4 @@
-import { type AverageStats, type StatKey } from '@/application/pokemon/average';
+import { type AverageStats, type StatKey } from '@/application/pokemon/AverageStats';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/uikit/card';
 import RadarChart from '@/ui/charts/RadarChart';
 import Link from 'next/link';
@@ -68,4 +68,3 @@ export default function AverageStatsCard({ data }: { data: AverageStats }) {
     </Card>
   );
 }
-

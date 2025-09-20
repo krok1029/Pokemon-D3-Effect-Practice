@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import { getPokemonRepository } from '@/infrastructure/config';
-import { list } from '@/application/pokemon/list';
+import { list } from '@/application/pokemon/ListPokemons';
 import TotalCountCard from '../components/TotalCountCard';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/ui/uikit/card';
 
@@ -19,4 +19,3 @@ export default async function TotalCountContainer() {
   }
   return <TotalCountCard total={res.right.total} />;
 }
-

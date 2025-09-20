@@ -1,4 +1,4 @@
-import type { Pokemon } from '@/domain/pokemon';
+import type { Pokemon } from './Pokemon';
 
 export class NotFound extends Error {
   readonly _tag = 'NotFound';
@@ -31,3 +31,4 @@ export interface PokemonRepository {
   ): Promise<{ pokemon: Pokemon; similar: Pokemon[] }>;
   list(params: PokemonListParams): Promise<PokemonListResult>;
 }
+

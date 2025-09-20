@@ -1,7 +1,7 @@
 // API 路由：/api/pokemon/[id]
 import { NextRequest, NextResponse } from 'next/server';
 import { Effect } from 'effect';
-import { detail, PathInput, QueryInput } from '@/application/pokemon/detail';
+import { detail, PathInput, QueryInput } from '@/application/pokemon/GetPokemonDetail';
 import { getPokemonRepository } from '@/infrastructure/config';
 
 function getPathInput(params: { id: string }): PathInput {
