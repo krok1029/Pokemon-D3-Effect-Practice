@@ -8,25 +8,34 @@ import type { PokemonRepository } from '@/core/domain/pokemon/PokemonRepository'
 
 import { PokemonRepositoryCsv } from '@/adapters/repo/PokemonRepositoryCsv';
 
+const DATA_PATH_BY_ENV = {
+  test: 'data/pokemon_fixture_30.csv',
+  default: 'data/pokemonCsv.csv',
+} as const;
+
 function resolveDataPath(): string {
-  const envPath = process.env.POKEMON_DATA_PATH;
-  if (envPath) return path.resolve(process.cwd(), envPath);
-  return path.resolve(
-    process.cwd(),
-    process.env.NODE_ENV === 'test' ? 'data/pokemon_fixture_30.csv' : 'data/pokemonCsv.csv',
-  );
+  const configuredPath = process.env.POKEMON_DATA_PATH;
+  if (configuredPath) {
+    return path.resolve(process.cwd(), configuredPath);
+  }
+
+  const key = process.env.NODE_ENV === 'test' ? 'test' : 'default';
+  return path.resolve(process.cwd(), DATA_PATH_BY_ENV[key]);
+}
+
+function instantiateRepository(): PokemonRepository {
+  const repository = new PokemonRepositoryCsv(resolveDataPath());
+  repository.init().catch((error) => {
+    console.error('Failed to initialize PokemonRepositoryCsv', error);
+  });
+  return repository;
 }
 
 export function createPokemonRepository(): PokemonRepository {
-  const repo = new PokemonRepositoryCsv(resolveDataPath());
-  repo.init().catch((e) => {
-    console.error('Failed to initialize PokemonRepositoryCsv', e);
-  });
-  return repo;
+  return instantiateRepository();
 }
 
-let repository: PokemonRepository = createPokemonRepository();
-// 確保 DI 容器中的綁定與目前的 Repository 實例保持一致
+let repository: PokemonRepository = instantiateRepository();
 container.registerInstance(TOKENS.PokemonRepository, repository);
 
 export function getPokemonRepository(): PokemonRepository {
@@ -35,5 +44,5 @@ export function getPokemonRepository(): PokemonRepository {
 
 export function setPokemonRepository(repo: PokemonRepository): void {
   repository = repo;
-  container.registerInstance(TOKENS.PokemonRepository, repo);
+  container.registerInstance(TOKENS.PokemonRepository, repository);
 }

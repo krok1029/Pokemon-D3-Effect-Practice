@@ -1,11 +1,10 @@
-// 基礎設施層：Pokemon CSV 解析與映射
 import {
   parseAbilities,
-  toTypeName,
   toMultiplier,
+  toTypeName,
   type Pokemon,
 } from '@/core/domain/pokemon/Pokemon';
-import { TYPES, type TypeName, type Multiplier } from '@/core/domain/pokemon/types';
+import { TYPES, type Multiplier, type TypeName } from '@/core/domain/pokemon/types';
 import { toBoolLike } from '@/core/shared/bool';
 
 import { DataLoadError } from './CsvService';
@@ -32,6 +31,28 @@ const AGAINST_FIELDS = [
 ] as const;
 
 type AgainstKey = (typeof AGAINST_FIELDS)[number];
+type RawRecord = Record<string, unknown>;
+
+const OPTIONAL_STRING_KEYS = [
+  'Type 2',
+  'Abilities',
+  'Experience type',
+  'Final Evolution',
+  'Legendary',
+  'Mega Evolution',
+  'Alolan Form',
+  'Galarian Form',
+] as const;
+
+const OPTIONAL_NUMBER_KEYS = [
+  'Mean',
+  'Standard Deviation',
+  'Experience to level 100',
+  'Catch Rate',
+  'Height',
+  'Weight',
+  'BMI',
+] as const;
 
 export type PokemonCsvRow = {
   Number: number;
@@ -80,142 +101,16 @@ export type PokemonCsvRow = {
   BMI?: number;
 };
 
-function parseNumber(
-  record: Record<string, unknown>,
-  key: string,
-  index: number,
-  optional = false,
-): number | undefined {
-  const raw = record[key];
-  if (raw == null || raw === '') {
-    if (optional) return undefined;
-    throw new DataLoadError(`Row ${index}: ${key} is required`);
-  }
-  if (typeof raw === 'number' && Number.isFinite(raw)) {
-    return raw;
-  }
-  if (typeof raw === 'string') {
-    const trimmed = raw.trim();
-    if (!trimmed) {
-      if (optional) return undefined;
-      throw new DataLoadError(`Row ${index}: ${key} is required`);
-    }
-    const parsed = Number(trimmed);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  throw new DataLoadError(`Row ${index}: ${key} must be a number`);
-}
-
-function parseString(
-  record: Record<string, unknown>,
-  key: string,
-  index: number,
-  optional = false,
-): string | undefined {
-  const raw = record[key];
-  if (raw == null) {
-    if (optional) return undefined;
-    throw new DataLoadError(`Row ${index}: ${key} is required`);
-  }
-  const str = typeof raw === 'string' ? raw.trim() : String(raw);
-  if (!str) {
-    if (optional) return undefined;
-    throw new DataLoadError(`Row ${index}: ${key} is required`);
-  }
-  return str;
-}
-
-function parseRow(row: unknown, index: number): PokemonCsvRow {
-  if (typeof row !== 'object' || row === null) {
-    throw new DataLoadError(`Row ${index}: expected object`);
-  }
-  const record = row as Record<string, unknown>;
-  const out: PokemonCsvRow = {
-    Number: parseNumber(record, 'Number', index)!,
-    Name: parseString(record, 'Name', index)!,
-    'Type 1': parseString(record, 'Type 1', index)!,
-    HP: parseNumber(record, 'HP', index)!,
-    Att: parseNumber(record, 'Att', index)!,
-    Def: parseNumber(record, 'Def', index)!,
-    Spa: parseNumber(record, 'Spa', index)!,
-    Spd: parseNumber(record, 'Spd', index)!,
-    Spe: parseNumber(record, 'Spe', index)!,
-    BST: parseNumber(record, 'BST', index)!,
-    Generation: parseNumber(record, 'Generation', index)!,
-  };
-
-  const type2 = parseString(record, 'Type 2', index, true);
-  if (type2) out['Type 2'] = type2;
-
-  const abilities = parseString(record, 'Abilities', index, true);
-  if (abilities) out.Abilities = abilities;
-
-  const mean = parseNumber(record, 'Mean', index, true);
-  if (mean !== undefined) out.Mean = mean;
-
-  const sd = parseNumber(record, 'Standard Deviation', index, true);
-  if (sd !== undefined) out['Standard Deviation'] = sd;
-
-  const expType = parseString(record, 'Experience type', index, true);
-  if (expType) out['Experience type'] = expType;
-
-  const exp100 = parseNumber(record, 'Experience to level 100', index, true);
-  if (exp100 !== undefined) out['Experience to level 100'] = exp100;
-
-  const finalEvolution = parseString(record, 'Final Evolution', index, true);
-  if (finalEvolution) out['Final Evolution'] = finalEvolution;
-
-  const catchRate = parseNumber(record, 'Catch Rate', index, true);
-  if (catchRate !== undefined) out['Catch Rate'] = catchRate;
-
-  const legendary = parseString(record, 'Legendary', index, true);
-  if (legendary) out.Legendary = legendary;
-
-  const mega = parseString(record, 'Mega Evolution', index, true);
-  if (mega) out['Mega Evolution'] = mega;
-
-  const alolan = parseString(record, 'Alolan Form', index, true);
-  if (alolan) out['Alolan Form'] = alolan;
-
-  const galarian = parseString(record, 'Galarian Form', index, true);
-  if (galarian) out['Galarian Form'] = galarian;
-
-  for (const key of AGAINST_FIELDS) {
-    const value = parseNumber(record, key, index, true);
-    if (value !== undefined) {
-      (out as unknown as Record<string, number | undefined>)[key] = value;
-    }
-  }
-
-  const height = parseNumber(record, 'Height', index, true);
-  if (height !== undefined) out.Height = height;
-
-  const weight = parseNumber(record, 'Weight', index, true);
-  if (weight !== undefined) out.Weight = weight;
-
-  const bmi = parseNumber(record, 'BMI', index, true);
-  if (bmi !== undefined) out.BMI = bmi;
-
-  return out;
-}
-
 export function parsePokemonCsv(rows: unknown[]): PokemonCsvRow[] {
   return rows.map((row, index) => parseRow(row, index));
 }
 
-// 方便安全索引 "Against XXX" 欄位
 export function toPokemon(row: PokemonCsvRow): Pokemon {
-  // 建 against 物件（避免 any）
-  const indexed = row as unknown as Record<AgainstKey, number | undefined>;
-  const against = Object.fromEntries(
-    TYPES.map((t) => [t, toMultiplier(indexed[`Against ${t}` as AgainstKey])]),
-  ) as Record<TypeName, Multiplier>;
-
   return {
     id: row.Number,
     name: row.Name,
     type1: toTypeName(row['Type 1']),
-    type2: row['Type 2'] ? toTypeName(row['Type 2'] as string) : null,
+    type2: row['Type 2'] ? toTypeName(row['Type 2']) : null,
     abilities: parseAbilities(row.Abilities),
     hp: row.HP,
     attack: row.Att,
@@ -235,9 +130,115 @@ export function toPokemon(row: PokemonCsvRow): Pokemon {
     mega: toBoolLike(row['Mega Evolution']),
     alolan: toBoolLike(row['Alolan Form']),
     galarian: toBoolLike(row['Galarian Form']),
-    against,
+    against: buildAgainst(row),
     height: row.Height ?? undefined,
     weight: row.Weight ?? undefined,
     bmi: row.BMI ?? undefined,
   };
+}
+
+function parseRow(row: unknown, index: number): PokemonCsvRow {
+  const record = ensureRecord(row, index);
+
+  const output: PokemonCsvRow = {
+    Number: readNumber(record, 'Number', index),
+    Name: readString(record, 'Name', index),
+    'Type 1': readString(record, 'Type 1', index),
+    HP: readNumber(record, 'HP', index),
+    Att: readNumber(record, 'Att', index),
+    Def: readNumber(record, 'Def', index),
+    Spa: readNumber(record, 'Spa', index),
+    Spd: readNumber(record, 'Spd', index),
+    Spe: readNumber(record, 'Spe', index),
+    BST: readNumber(record, 'BST', index),
+    Generation: readNumber(record, 'Generation', index),
+  };
+
+  for (const key of OPTIONAL_STRING_KEYS) {
+    const value = readOptionalString(record, key);
+    if (value !== undefined) {
+      output[key] = value;
+    }
+  }
+
+  for (const key of OPTIONAL_NUMBER_KEYS) {
+    const value = readOptionalNumber(record, key, index);
+    if (value !== undefined) {
+      output[key] = value;
+    }
+  }
+
+  for (const field of AGAINST_FIELDS) {
+    const value = readOptionalNumber(record, field, index);
+    if (value !== undefined) {
+      (output as unknown as Record<AgainstKey, number | undefined>)[field] = value;
+    }
+  }
+
+  return output;
+}
+
+function buildAgainst(row: PokemonCsvRow): Record<TypeName, Multiplier> {
+  const indexed = row as unknown as Record<AgainstKey, number | undefined>;
+  return Object.fromEntries(
+    TYPES.map((type) => [type, toMultiplier(indexed[`Against ${type}` as AgainstKey])]),
+  ) as Record<TypeName, Multiplier>;
+}
+
+function ensureRecord(row: unknown, index: number): RawRecord {
+  if (typeof row !== 'object' || row === null) {
+    throw new DataLoadError(`Row ${index}: expected object`);
+  }
+  return row as RawRecord;
+}
+
+function readNumber(record: RawRecord, key: string, index: number): number {
+  const value = record[key];
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = parseNumberString(value);
+    if (parsed !== undefined) {
+      return parsed;
+    }
+  }
+  throw new DataLoadError(`Row ${index}: ${key} must be a number`);
+}
+
+function readOptionalNumber(record: RawRecord, key: string, index: number): number | undefined {
+  const value = record[key];
+  if (value == null || value === '') {
+    return undefined;
+  }
+  return readNumber(record, key, index);
+}
+
+function readString(record: RawRecord, key: string, index: number): string {
+  const value = readOptionalString(record, key);
+  if (value === undefined) {
+    throw new DataLoadError(`Row ${index}: ${key} is required`);
+  }
+  return value;
+}
+
+function readOptionalString(record: RawRecord, key: string): string | undefined {
+  const value = record[key];
+  if (value == null) {
+    return undefined;
+  }
+  const text = typeof value === 'string' ? value.trim() : String(value).trim();
+  if (!text) {
+    return undefined;
+  }
+  return text;
+}
+
+function parseNumberString(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
