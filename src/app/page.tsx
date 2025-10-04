@@ -1,5 +1,5 @@
-import TotalCountSection from '@/app/components/dashboard/TotalCountSection';
-import AverageStatsSection from '@/app/components/dashboard/AverageStatsSection';
+import TotalCountSection from '@/app/components/dashboard/sections/TotalCountSection';
+import AverageStatsSection from '@/app/components/dashboard/sections/AverageStatsSection';
 
 export default async function Home() {
   return (

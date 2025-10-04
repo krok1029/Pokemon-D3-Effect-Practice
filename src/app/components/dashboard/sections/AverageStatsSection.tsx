@@ -1,6 +1,6 @@
 import { getPokemonRepository } from '@/adapters/config';
 import { average } from '@/core/application/pokemon/AverageStats';
-import AverageStatsCard from './AverageStatsCard';
+import AverageStatsCard from '../cards/AverageStatsCard';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 
 export default async function AverageStatsSection() {

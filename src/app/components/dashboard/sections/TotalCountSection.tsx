@@ -1,6 +1,6 @@
 import { getPokemonRepository } from '@/adapters/config';
 import { list } from '@/core/application/pokemon/ListPokemons';
-import TotalCountCard from './TotalCountCard';
+import TotalCountCard from '../cards/TotalCountCard';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 
 export default async function TotalCountSection() {

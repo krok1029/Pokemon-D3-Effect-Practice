@@ -15,7 +15,7 @@ export default function TotalCountCard({ total }: { total: number }) {
             GitHub
           </Link>
         </CardDescription>
-        <CardAction></CardAction>
+        <CardAction />
       </CardHeader>
       <CardContent className="text-5xl font-extrabold text-end">
         {total}

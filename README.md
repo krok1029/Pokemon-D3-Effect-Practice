@@ -9,6 +9,9 @@ src
 ├─ app/                         # Next.js App Router：所有 UI / Routes
 │  ├─ api/pokemon/              # Controllers，呼叫 UseCase 後回傳 JSON
 │  ├─ components/               # 介面層組件（dashboard / charts / ui）
+│  │  ├─ dashboard/              # 頁面區塊：sections（資料載入）與 cards（純展示）
+│  │  ├─ charts/                 # D3 圖表與工具
+│  │  └─ ui/                     # 共用 UI 元件（card、tooltip 等）
 │  ├─ layout.tsx                # 佈局 + ThemeProvider
 │  └─ page.tsx, chart/, pokemon/ 等頁面
 │
