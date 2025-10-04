@@ -6,6 +6,7 @@ import {
   type PathInput,
   type QueryInput,
 } from '@/core/application/pokemon/GetPokemonDetail';
+
 import { getPokemonRepository } from '@/adapters/config';
 
 type RouteContext = { params: Promise<{ id: string }> };
