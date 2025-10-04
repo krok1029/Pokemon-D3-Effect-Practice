@@ -1,4 +1,4 @@
-import { Effect } from 'effect';
+import { ok, err, type Result } from '@/shared/result';
 
 export type Size = { width: number; height: number };
 export type Point = { x: number; y: number };
@@ -6,13 +6,15 @@ export type Point = { x: number; y: number };
 export const validateRadarE = (
   labels: string[],
   values: number[]
-): Effect.Effect<{ n: number }, Error> =>
-  Effect.sync(() => {
-    const n = labels.length;
-    if (n === 0) throw new Error('labels is empty');
-    if (n !== values.length) throw new Error('labels/values length mismatch');
-    return { n } as const;
-  });
+): Result<Error, { n: number }> => {
+  if (labels.length === 0) {
+    return err(new Error('labels is empty'));
+  }
+  if (labels.length !== values.length) {
+    return err(new Error('labels/values length mismatch'));
+  }
+  return ok({ n: labels.length } as const);
+};
 
 export function anglesFor(n: number): number[] {
   const out: number[] = [];

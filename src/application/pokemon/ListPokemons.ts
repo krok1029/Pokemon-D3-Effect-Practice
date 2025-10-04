@@ -1,13 +1,12 @@
-import { Effect, Schema as S } from 'effect';
-import type { PokemonRepository } from '@/domain/pokemon/PokemonRepository';
-import { invalidInput } from '../errors';
+import type {
+  PokemonListResult,
+  PokemonRepository,
+} from '@/domain/pokemon/PokemonRepository';
+import { invalidInput, isServiceError, type ServiceError } from '../errors';
+import { ok, err, type Result } from '@/shared/result';
 import { toBoolLike } from '@/shared/bool';
 
-// === Utilities ===
-function fmtSchemaError(e: unknown) {
-  return String(e);
-}
-
+// === Types ===
 type SortKey =
   | 'hp'
   | 'attack'
@@ -20,6 +19,25 @@ type SortKey =
   | 'sd'
   | 'generation';
 
+type QueryInputValue = string | number | null | undefined;
+
+export type QueryInput = {
+  q?: QueryInputValue;
+  legendary?: QueryInputValue;
+  page?: QueryInputValue;
+  pageSize?: QueryInputValue;
+  sort?: QueryInputValue;
+};
+
+export type Query = {
+  q?: string;
+  legendary?: string;
+  page?: number;
+  pageSize?: number;
+  sort?: string;
+};
+
+// === Utilities ===
 function normalizeSort(
   input?: string
 ): `${SortKey}:${'asc' | 'desc'}` | undefined {
@@ -44,38 +62,63 @@ function normalizeSort(
   return undefined;
 }
 
-// === Schema ===
-export const QuerySchema = S.Struct({
-  q: S.optional(S.String),
-  legendary: S.optional(S.String),
-  page: S.optional(S.NumberFromString),
-  pageSize: S.optional(S.NumberFromString),
-  sort: S.optional(S.String),
-});
+function toOptionalString(value: QueryInputValue, field: string): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  throw invalidInput(`${field} must be a string`);
+}
 
-export type Query = S.Schema.Type<typeof QuerySchema>;
-export type QueryInput = S.Schema.Encoded<typeof QuerySchema>;
+function toOptionalNumber(value: QueryInputValue, field: string): number | undefined {
+  if (value == null) return undefined;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  throw invalidInput(`${field} must be a number`);
+}
+
+function decodeQuery(input: QueryInput): Query {
+  return {
+    q: toOptionalString(input.q, 'q'),
+    legendary: toOptionalString(input.legendary, 'legendary'),
+    page: toOptionalNumber(input.page, 'page'),
+    pageSize: toOptionalNumber(input.pageSize, 'pageSize'),
+    sort: toOptionalString(input.sort, 'sort'),
+  } satisfies Query;
+}
+
+function toServiceError(error: unknown): ServiceError {
+  if (isServiceError(error)) return error;
+  if (error instanceof Error) return invalidInput(error.message);
+  return invalidInput(String(error));
+}
 
 // === UseCase ===
-export function list(repo: PokemonRepository, input: QueryInput) {
-  const eff = S.decodeUnknown(QuerySchema)(input).pipe(
-    Effect.mapError((e) => invalidInput(fmtSchemaError(e))),
-    Effect.flatMap((q: Query) => {
-      const legendary = toBoolLike(q.legendary);
+export async function list(
+  repo: PokemonRepository,
+  input: QueryInput
+): Promise<Result<ServiceError, PokemonListResult>> {
+  try {
+    const q = decodeQuery(input);
+    const legendary = toBoolLike(q.legendary);
 
-      const params = {
-        q: q.q?.trim() ? q.q.trim() : undefined,
-        legendary: typeof legendary === 'boolean' ? legendary : undefined,
-        page: q.page && q.page > 0 ? q.page : 1,
-        pageSize:
-          q.pageSize && q.pageSize > 0 && q.pageSize <= 200 ? q.pageSize : 50,
-        sort: normalizeSort(q.sort),
-      } as const;
+    const params = {
+      q: q.q?.trim() ? q.q.trim() : undefined,
+      legendary: typeof legendary === 'boolean' ? legendary : undefined,
+      page: q.page && q.page > 0 ? q.page : 1,
+      pageSize:
+        q.pageSize && q.pageSize > 0 && q.pageSize <= 200 ? q.pageSize : 50,
+      sort: normalizeSort(q.sort),
+    } as const;
 
-      return Effect.tryPromise(() => repo.list(params));
-    })
-  );
-
-  return Effect.either(eff);
+    const result = await repo.list(params);
+    return ok(result);
+  } catch (error) {
+    return err(toServiceError(error));
+  }
 }
 

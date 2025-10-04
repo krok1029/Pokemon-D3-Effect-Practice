@@ -2,7 +2,6 @@
 import * as d3 from 'd3';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/ui/uikit/tooltip';
-import { Effect } from 'effect';
 import { validateRadarE, maxFrom, pointsFor, ticksFor, type Point } from './utils/radar';
 
 export type RadarChartProps = {
@@ -63,7 +62,7 @@ export default function RadarChart({
 
   useEffect(() => {
     if (!svgRef.current || !wrapRef.current) return;
-    const ok = Effect.runSync(Effect.either(validateRadarE(labels, values)));
+    const ok = validateRadarE(labels, values);
     if (ok._tag === 'Left') return;
     const { n } = ok.right;
 

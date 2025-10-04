@@ -31,7 +31,7 @@ src
 │  │  └─ tooltip.tsx
 │  └─ theme-provider.tsx
 │
-├─ application/             # UseCases / DTO / Policies（Effect）
+├─ application/             # UseCases / DTO / Policies（Result-based）
 │  ├─ errors.ts
 │  └─ pokemon/
 │     ├─ ListPokemons.ts
@@ -66,7 +66,7 @@ src
 
 - UI/Pages：只負責畫面與組裝，不碰資料來源細節。
 - Controller/Routes：唯一處理 HTTP 的地方；parse/驗證 → 呼叫 UseCase → 回傳 JSON。
-- Application：用 Effect 實作流程控制；只依賴 Domain 的 Repository 介面，不依賴 Infra。
+- Application：用自訂 Result 協調流程控制；只依賴 Domain 的 Repository 介面，不依賴 Infra。
 - Domain：核心商業規則與不變式；定義 Entity/ValueObject/Repository 介面與常數。
 - Infrastructure：連接外界（CSV/DB/HTTP），實作 Repository 與 DI；轉換為 Domain/DTO。
 

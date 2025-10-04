@@ -1,32 +1,59 @@
-import { Effect, Schema as S } from 'effect';
-import { invalidInput } from '../errors';
-import { NotFound as RepoNotFound, type PokemonRepository } from '@/domain/pokemon/PokemonRepository';
+import { invalidInput, isServiceError, type ServiceError } from '../errors';
+import { ok, err, type Result } from '@/shared/result';
+import {
+  NotFound as RepoNotFound,
+  type PokemonRepository,
+} from '@/domain/pokemon/PokemonRepository';
 
-export const PathSchema = S.Struct({ id: S.NumberFromString });
-export type Path = S.Schema.Type<typeof PathSchema>;
-export type PathInput = S.Schema.Encoded<typeof PathSchema>;
+export type PathInputValue = string | number | null | undefined;
+export type PathInput = { id: PathInputValue };
+export type Path = { id: number };
 
-export const QuerySchema = S.Struct({ k: S.optional(S.NumberFromString) });
-export type Query = S.Schema.Type<typeof QuerySchema>;
-export type QueryInput = S.Schema.Encoded<typeof QuerySchema>;
+export type QueryInputValue = string | number | null | undefined;
+export type QueryInput = { k?: QueryInputValue };
+export type Query = { k?: number };
 
-export function detail(
+function toNumber(value: string | number, field: string): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.floor(value);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) throw invalidInput(`${field} is required`);
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) return Math.floor(parsed);
+  }
+  throw invalidInput(`${field} must be a number`);
+}
+
+function parsePath(input: PathInput): Path {
+  if (input.id == null) throw invalidInput('id is required');
+  return { id: toNumber(input.id, 'id') };
+}
+
+function parseQuery(input: QueryInput): Query {
+  if (input.k == null) return {};
+  return { k: toNumber(input.k, 'k') };
+}
+
+function toServiceError(error: unknown): ServiceError {
+  if (isServiceError(error)) return error;
+  if (error instanceof Error) return invalidInput(error.message);
+  return invalidInput(String(error));
+}
+
+export async function detail(
   repo: PokemonRepository,
   input: { path: PathInput; query: QueryInput }
-) {
-  const eff = S.decodeUnknown(PathSchema)(input.path).pipe(
-    Effect.zip(S.decodeUnknown(QuerySchema)(input.query)),
-    Effect.mapError((e) => invalidInput(String(e))),
-    Effect.flatMap(([path, query]) =>
-      Effect.tryPromise(() => repo.getByIdWithSimilar(path.id, query.k ?? 5))
-    ),
-    Effect.catchAll((e) =>
-      e instanceof RepoNotFound
-        ? Effect.fail(e)
-        : Effect.fail(invalidInput(String(e)))
-    )
-  );
-
-  return Effect.either(eff);
+): Promise<Result<ServiceError | RepoNotFound, Awaited<ReturnType<PokemonRepository['getByIdWithSimilar']>>>> {
+  try {
+    const path = parsePath(input.path);
+    const query = parseQuery(input.query);
+    const result = await repo.getByIdWithSimilar(path.id, query.k ?? 5);
+    return ok(result);
+  } catch (error) {
+    if (error instanceof RepoNotFound) {
+      return err(error);
+    }
+    return err(toServiceError(error));
+  }
 }
 

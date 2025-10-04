@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import { getPokemonRepository } from '@/infrastructure/config';
 import { list } from '@/application/pokemon/ListPokemons';
 import TotalCountCard from '../components/TotalCountCard';
@@ -6,7 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/ui/uikit/card';
 
 export default async function TotalCountContainer() {
   const repo = getPokemonRepository();
-  const res = await Effect.runPromise(list(repo, {}));
+  const res = await list(repo, {});
   if (res._tag === 'Left') {
     return (
       <Card className="w-64">

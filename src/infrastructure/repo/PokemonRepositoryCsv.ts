@@ -1,5 +1,4 @@
 // 基礎設施層：以 CSV 作為資料來源的 Pokemon Repository 實作
-import { Effect } from 'effect';
 import { readCsv } from '@/infrastructure/csv/CsvService';
 import type { Pokemon } from '@/domain/pokemon/Pokemon';
 import { parsePokemonCsv, toPokemon } from '@/infrastructure/csv/pokemonCsv';
@@ -40,12 +39,8 @@ export class PokemonRepositoryCsv implements PokemonRepository {
     if (!force && this.data) {
       return this.data;
     }
-    const rows = await Effect.runPromise(
-      readCsv(this.path).pipe(
-        Effect.flatMap(parsePokemonCsv),
-        Effect.map((rows) => rows.map(toPokemon)),
-      )
-    );
+    const rawRows = await readCsv(this.path);
+    const rows = parsePokemonCsv(rawRows).map(toPokemon);
     this.data = rows;
     return rows;
   }
@@ -59,7 +54,7 @@ export class PokemonRepositoryCsv implements PokemonRepository {
     const p = rows.find((p) => p.id === id);
     if (!p) throw new NotFound(`Pokemon ${id} not found`);
     return p;
-    }
+  }
 
   async getByIdWithSimilar(
     id: number,
@@ -175,3 +170,4 @@ export class PokemonRepositoryCsv implements PokemonRepository {
     return { total: xs.length, page, pageSize, data };
   }
 }
+

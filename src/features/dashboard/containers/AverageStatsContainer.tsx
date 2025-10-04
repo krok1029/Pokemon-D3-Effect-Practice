@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import { getPokemonRepository } from '@/infrastructure/config';
 import { average } from '@/application/pokemon/AverageStats';
 import AverageStatsCard from '../components/AverageStatsCard';
@@ -6,7 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/ui/uikit/card';
 
 export default async function AverageStatsContainer() {
   const repo = getPokemonRepository();
-  const res = await Effect.runPromise(average(repo));
+  const res = await average(repo);
   if (res._tag === 'Left') {
     const msg = res.left.message;
     return (
