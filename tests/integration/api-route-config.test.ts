@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { TYPES, type TypeName, type Multiplier } from '@/domain/pokemon/types';
-import type { Pokemon } from '@/domain/pokemon/Pokemon';
-import type { PokemonRepository } from '@/domain/pokemon/PokemonRepository';
-import { setPokemonRepository, createPokemonRepository } from '@/infrastructure/config';
+import { TYPES, type TypeName, type Multiplier } from '@/core/domain/pokemon/types';
+import type { Pokemon } from '@/core/domain/pokemon/Pokemon';
+import type { PokemonRepository } from '@/core/domain/pokemon/PokemonRepository';
+import { setPokemonRepository, createPokemonRepository } from '@/adapters/config';
 import { GET } from '@/app/api/pokemon/route';
 
 class MockRepo implements PokemonRepository {

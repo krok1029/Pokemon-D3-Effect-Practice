@@ -1,8 +1,8 @@
 // tests/integration/repo-list.test.ts
 import { describe, it, expect } from 'vitest';
-import { PokemonRepositoryCsv } from '@/infrastructure/repo/PokemonRepositoryCsv';
-import { list } from '@/application/pokemon/ListPokemons';
-import { isOk } from '@/shared/result';
+import { PokemonRepositoryCsv } from '@/adapters/repo/PokemonRepositoryCsv';
+import { list } from '@/core/application/pokemon/ListPokemons';
+import { isOk } from '@/core/shared/result';
 
 const FIXTURE = 'data/pokemon_fixture_30.csv';
 

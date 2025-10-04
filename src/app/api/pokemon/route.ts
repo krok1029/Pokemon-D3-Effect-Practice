@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { list, type QueryInput } from '@/application/pokemon/ListPokemons';
-import { getPokemonRepository } from '@/infrastructure/config';
+import { list, type QueryInput } from '@/core/application/pokemon/ListPokemons';
+import { getPokemonRepository } from '@/adapters/config';
 
 // 將 URLSearchParams 轉換為 UseCase 的 QueryInput
 function getQueryInput(req: NextRequest): QueryInput {

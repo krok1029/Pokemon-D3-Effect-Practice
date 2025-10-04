@@ -1,7 +1,7 @@
 // tests/integration/csv-read.test.ts
 import { describe, it, expect } from 'vitest';
-import { readCsv } from '@/infrastructure/csv/CsvService';
-import { parsePokemonCsv } from '@/infrastructure/csv/pokemonCsv';
+import { readCsv } from '@/adapters/csv/CsvService';
+import { parsePokemonCsv } from '@/adapters/csv/pokemonCsv';
 
 const FIXTURE = 'data/pokemon_fixture_30.csv';
 

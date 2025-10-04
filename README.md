@@ -1,98 +1,46 @@
-## 專案架構（DDD + Clean Architecture）
+## 專案架構（精簡版 DDD）
 
-本專案依照「UI/Pages → Controller/Routes → Application → Domain → Infrastructure」分層，強調關注點分離、可測試性與擴充性。
+專案維持 DDD 的核心精神，但僅保留三個主要層級：`core`（domain + application）、`adapters`（基礎建設 / 外部系統）與 `app`（介面層）。這樣的整理讓目錄更單純，同時保留分層邏輯、易測性與可替換性。
 
 ### 目錄總覽
 
 ```
 src
-├─ app/                     # UI / Pages（Next.js App Router）
-│  ├─ api/pokemon/          # Controller / Routes（HTTP 邊界）
-│  ├─ chart/page.tsx
-│  ├─ pokemon/page.tsx
-│  ├─ layout.tsx
-│  └─ globals.css
+├─ app/                         # Next.js App Router：所有 UI / Routes
+│  ├─ api/pokemon/              # Controllers，呼叫 UseCase 後回傳 JSON
+│  ├─ components/               # 介面層組件（dashboard / charts / ui）
+│  ├─ layout.tsx                # 佈局 + ThemeProvider
+│  └─ page.tsx, chart/, pokemon/ 等頁面
 │
-├─ features/                # UI-邏輯容器：組裝畫面與呼叫 UseCase
-│  └─ dashboard/
-│     ├─ containers/
-│     │  ├─ AverageStatsContainer.tsx
-│     │  └─ TotalCountContainer.tsx
-│     └─ components/
-│        ├─ AverageStatsCard.tsx
-│        └─ TotalCountCard.tsx
+├─ core/                        # Domain + Application + Shared
+│  ├─ domain/                   # 實體、值物件、Repository 介面與常數
+│  ├─ application/              # UseCase，回傳自訂 Result，僅依賴 domain 介面
+│  └─ shared/                   # 共用工具（bool、result、utils）
 │
-├─ ui/                      # 純展示組件（shadcn / D3）
-│  ├─ charts/
-│  │  ├─ RadarChart.tsx
-│  │  └─ utils/radar.ts
-│  ├─ uikit/
-│  │  ├─ card.tsx
-│  │  └─ tooltip.tsx
-│  └─ theme-provider.tsx
+├─ adapters/                    # 對外部世界的實作（基礎建設）
+│  ├─ config/                   # DI / Repository 組態
+│  ├─ csv/                      # CSV 讀寫與資料轉換
+│  └─ repo/                     # PokemonRepository 具體實作
 │
-├─ application/             # UseCases / DTO / Policies（Result-based）
-│  ├─ errors.ts
-│  └─ pokemon/
-│     ├─ ListPokemons.ts
-│     ├─ GetPokemonDetail.ts
-│     └─ AverageStats.ts
-│
-├─ domain/                  # Entity / ValueObject / Repository 介面
-│  ├─ pokemon/
-│  │  ├─ Pokemon.ts
-│  │  ├─ PokemonRepository.ts
-│  │  └─ types.ts
-│  └─ constants.ts
-│
-├─ infrastructure/          # I/O、實作 Repository、DI
-│  ├─ config/index.ts       # getPokemonRepository()（DI 單例）
-│  ├─ csv/
-│  │  ├─ CsvService.ts
-│  │  └─ pokemonCsv.ts
-│  └─ repo/
-│     └─ PokemonRepositoryCsv.ts
-│
-├─ di/tokens.ts
-├─ shared/utils.ts
-├─ shared/bool.ts
-└─ tests/
-   ├─ domain/*.test.ts
-   ├─ infrastructure/*.test.ts
-   └─ integration/*.test.ts
+├─ di/tokens.ts                 # 依賴注入 Token 定義
+└─ tests/                       # 對應各層的測試（domain / adapters / integration）
 ```
 
-### 各層責任
+### 層級責任
 
-- UI/Pages：只負責畫面與組裝，不碰資料來源細節。
-- Controller/Routes：唯一處理 HTTP 的地方；parse/驗證 → 呼叫 UseCase → 回傳 JSON。
-- Application：用自訂 Result 協調流程控制；只依賴 Domain 的 Repository 介面，不依賴 Infra。
-- Domain：核心商業規則與不變式；定義 Entity/ValueObject/Repository 介面與常數。
-- Infrastructure：連接外界（CSV/DB/HTTP），實作 Repository 與 DI；轉換為 Domain/DTO。
+- **app**：界面層，Next.js 頁面、Server Components 與 API Routes；僅透過 UseCase 與外界互動。
+- **core**：系統核心。`domain` 提供商業模型與不變式，`application` 負責流程協調與輸入檢驗，`shared` 放共同工具。
+- **adapters**：對應外部資源（CSV 檔案），實作 `PokemonRepository` 介面並提供組態。
 
-### 資料流程
+### 資料流向
 
-UI → Container（features）→ UseCase（application）→ Repository 介面（domain）→ Repository 實作（infrastructure）→ 回傳 DTO → UI 組件渲染。
-
-### DI 與組態
-
-- `infrastructure/config/index.ts` 提供 `getPokemonRepository()` 單例存取。
-- API Routes 與 Server Components 透過該函式取用 Repository，避免 UI 直接依賴 Infra 細節。
-
-### 開發規範
-
-- UI/Pages 不 import Infra；只呼叫 features 或 application。
-- Application 不 import Infra；僅依賴 Domain 介面。
-- Infra 不 import UI/Application；只實作 Domain 介面與 I/O 轉換。
-- 共用常數（如 `MAX_STAT`）放在 `domain/constants.ts`。
-- shadcn 組件位於 `src/ui/uikit`，對應 alias 已更新（`components.json`）。
+UI/Routes（app）→ UseCase（core/application）→ Repository 介面（core/domain）→ CSV 實作（adapters）→ 回傳 DTO → UI render。
 
 ### 測試佈局
 
-- `tests/domain`：不依賴任何 I/O。
-- `tests/infrastructure`：測 Repository/Csv 實作。
-- `tests/integration`：打 API Route 進行整合測試。
-- 可加上 `tests/application` 以 mock Repository 測 UseCase。
+- `tests/domain`：針對純領域邏輯。
+- `tests/adapters`：針對 CSV/Repository 的具體實作。
+- `tests/integration`：從 UseCase 到實體 CSV 的整合驗證。
 
 ---
 

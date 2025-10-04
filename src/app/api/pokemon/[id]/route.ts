@@ -4,8 +4,8 @@ import {
   detail,
   type PathInput,
   type QueryInput,
-} from '@/application/pokemon/GetPokemonDetail';
-import { getPokemonRepository } from '@/infrastructure/config';
+} from '@/core/application/pokemon/GetPokemonDetail';
+import { getPokemonRepository } from '@/adapters/config';
 
 function getPathInput(params: { id: string }): PathInput {
   return { id: params.id };
