@@ -1,85 +1,70 @@
-## 專案架構（精簡版 DDD）
+# Pokemon D3 Effect
 
-專案維持 DDD 的核心精神，但僅保留三個主要層級：`core`（domain + application）、`adapters`（基礎建設 / 外部系統）與 `app`（介面層）。這樣的整理讓目錄更單純，同時保留分層邏輯、易測性與可替換性。
+互動式 Pokémon 資料視覺化儀表板，結合 Next.js App Router 與 D3.js 呈現 CSV 資料。專案採用精簡版 DDD 分層與 DI 管理，方便擴充與測試。
 
-### 目錄總覽
+## 快速開始
+
+### 先決條件
+- Node.js 18.18+（Next.js 15 相容版本）
+- Yarn 4（專案使用 Plug'n'Play；建議 `corepack enable` 讓 Node 管理 Yarn）
+
+### 安裝與啟動
+```bash
+corepack enable          # 第一次使用 Yarn 4 時需要
+yarn install              # 安裝依賴
+yarn dev                  # 啟動開發伺服器，預設 http://localhost:3000
+```
+
+## 常用指令
+- `yarn dev`：啟動開發模式（熱重載）
+- `yarn build` / `yarn start`：建置並啟動正式環境
+- `yarn lint`：執行 ESLint 檢查
+- `yarn typecheck`：跑 TypeScript 型別檢查
+- `yarn test`：執行 Vitest 單元與整合測試
+- `yarn test:e2e`：執行 Playwright E2E 測試（首次前需 `npx playwright install`）
+- `yarn coverage`：產出測試覆蓋率報告
+
+## 資料夾導覽
 
 ```
 src
-├─ app/                         # Next.js App Router：所有 UI / Routes
-│  ├─ api/pokemon/              # Controllers，呼叫 UseCase 後回傳 JSON
-│  ├─ components/               # 介面層組件（dashboard / charts / ui）
-│  │  ├─ dashboard/              # 頁面區塊：sections（資料載入）與 cards（純展示）
-│  │  ├─ charts/                 # D3 圖表與工具
-│  │  └─ ui/                     # 共用 UI 元件（card、tooltip 等）
-│  ├─ layout.tsx                # 佈局 + ThemeProvider
+├─ app/                         # Next.js App Router 與所有 UI 元件
+│  ├─ api/pokemon/              # Route Handlers，呼叫 UseCase 後回傳 JSON
+│  ├─ components/               # UI 元件（dashboard / charts / ui）
+│  ├─ layout.tsx                # 全域佈局與 ThemeProvider
 │  └─ page.tsx, chart/, pokemon/ 等頁面
 │
 ├─ core/                        # Domain + Application + Shared
-│  ├─ domain/                   # 實體、值物件、Repository 介面與常數
-│  ├─ application/              # UseCase，回傳自訂 Result，僅依賴 domain 介面
-│  └─ shared/                   # 共用工具（bool、result、utils）
+│  ├─ domain/                   # 實體、值物件、Repository 介面、不變式
+│  ├─ application/              # UseCase，回傳 Result，僅依賴 domain 介面
+│  └─ shared/                   # 共用函式（結果型別、工具等）
 │
-├─ adapters/                    # 對外部世界的實作（基礎建設）
-│  ├─ config/                   # DI / Repository 組態
-│  ├─ csv/                      # CSV 讀寫與資料轉換
+├─ adapters/                    # 基礎建設層，連結外部資源
+│  ├─ config/                   # DI 組態與 repository 工廠
+│  ├─ csv/                      # CSV 解析與資料轉換
 │  └─ repo/                     # PokemonRepository 具體實作
 │
-├─ di/tokens.ts                 # 依賴注入 Token 定義
-└─ tests/                       # 對應各層的測試（domain / adapters / integration）
+├─ di/tokens.ts                 # tsyringe 依賴注入 Token 定義
+└─ tests/                       # Vitest 測試（domain / adapters / integration）
 ```
 
-### 層級責任
+## 架構與資料流
+- **app layer**：Next.js 介面層（Server Components、Route Handlers），僅透過 UseCase 存取商業邏輯。
+- **core layer**：`domain` 定義模型與介面，`application` 封裝 UseCase，`shared` 放置通用工具與 Result 型別。
+- **adapters layer**：處理 CSV 存取與外部整合，提供 `PokemonRepository` 實作並注入容器。
+- **資料流**：UI / Routes → UseCase（core/application）→ Repository 介面（core/domain）→ CSV 實作（adapters）→ DTO → UI render。
 
-- **app**：界面層，Next.js 頁面、Server Components 與 API Routes；僅透過 UseCase 與外界互動。
-- **core**：系統核心。`domain` 提供商業模型與不變式，`application` 負責流程協調與輸入檢驗，`shared` 放共同工具。
-- **adapters**：對應外部資源（CSV 檔案），實作 `PokemonRepository` 介面並提供組態。
+## CSV 資料來源
+- 預設資料：`data/pokemonCsv.csv`
+- 測試情境使用：`data/pokemon_fixture_30.csv`
+- 自訂資料：設定環境變數 `POKEMON_DATA_PATH=/abs/path/to/your.csv`，系統會在啟動時載入指定檔案。
 
-### 資料流向
+## 測試與品質保證
+- Vitest 用於單元與整合測試，可於 `tests/` 找到對應案例。
+- Playwright 覆蓋端到端流程，建議在本機執行前安裝瀏覽器相依（`npx playwright install`）。
+- CI 建議串連 `yarn lint`、`yarn typecheck`、`yarn test` 以確保品質。
 
-UI/Routes（app）→ UseCase（core/application）→ Repository 介面（core/domain）→ CSV 實作（adapters）→ 回傳 DTO → UI render。
-
-### 測試佈局
-
-- `tests/domain`：針對純領域邏輯。
-- `tests/adapters`：針對 CSV/Repository 的具體實作。
-- `tests/integration`：從 UseCase 到實體 CSV 的整合驗證。
-
----
-
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 開發筆記
+- 專案使用 tsyringe 管理 DI，若新增 repository/adapter，記得在 `src/adapters/config` 中註冊。
+- D3 視覺化元件位於 `src/app/components/charts`；視覺元素與資料載入分離（`sections` vs `cards`）。
+- 新增 domain 邏輯時，務必針對 `tests/domain` 或 `tests/integration` 補齊測試以維持覆蓋率。
