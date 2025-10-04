@@ -1,8 +1,8 @@
+import type { Pokemon } from '@/core/domain/pokemon/Pokemon';
 import type { PokemonRepository } from '@/core/domain/pokemon/PokemonRepository';
-import { invalidInput, isServiceError, type ServiceError } from '../errors';
-import { ok, err, type Result } from '@/core/shared/result';
+import { err, ok, type Result } from '@/core/shared/result';
+import { toServiceError, type ServiceError } from '../errors';
 
-// 僅限 UI 需要的六圍鍵
 const METRICS = [
   'hp',
   'attack',
@@ -11,6 +11,7 @@ const METRICS = [
   'sp_def',
   'speed',
 ] as const;
+
 export type StatKey = (typeof METRICS)[number];
 
 export type AverageStats = {
@@ -18,31 +19,43 @@ export type AverageStats = {
   avgs: Array<{ key: StatKey; value: number }>;
 };
 
-function toServiceError(error: unknown): ServiceError {
-  if (isServiceError(error)) return error;
-  if (error instanceof Error) return invalidInput(error.message);
-  return invalidInput(String(error));
-}
-
 export async function average(
   repo: PokemonRepository
 ): Promise<Result<ServiceError, AverageStats>> {
   try {
-    const rows = await repo.getAll();
-    const n = rows.length;
-    const sums = { hp: 0, attack: 0, defense: 0, sp_atk: 0, sp_def: 0, speed: 0 } as Record<StatKey, number>;
-    for (const p of rows) {
-      for (const k of METRICS) {
-        sums[k] += (p)[k] as number;
-      }
-    }
-    const avgs = METRICS.map((k) => ({
-      key: k,
-      value: n > 0 ? Math.round((sums[k] / n) * 10) / 10 : 0,
-    }));
-    return ok({ count: n, avgs });
+    const pokemons = await repo.getAll();
+    const aggregates = aggregateStats(pokemons);
+    return ok(aggregates);
   } catch (error) {
     return err(toServiceError(error));
   }
 }
 
+function aggregateStats(rows: ReadonlyArray<Pokemon>): AverageStats {
+  const totals = initTotals();
+
+  for (const pokemon of rows) {
+    for (const metric of METRICS) {
+      totals[metric] += pokemon[metric];
+    }
+  }
+
+  const count = rows.length;
+  const avgs = METRICS.map((metric) => ({
+    key: metric,
+    value: count > 0 ? roundToTenths(totals[metric] / count) : 0,
+  }));
+
+  return { count, avgs };
+}
+
+function initTotals(): Record<StatKey, number> {
+  return METRICS.reduce<Record<StatKey, number>>((acc, metric) => {
+    acc[metric] = 0;
+    return acc;
+  }, {} as Record<StatKey, number>);
+}
+
+function roundToTenths(value: number): number {
+  return Math.round(value * 10) / 10;
+}

@@ -25,3 +25,9 @@ export function isServiceError(error: unknown): error is ServiceError {
   const tag = (error as { _tag?: unknown })._tag;
   return tag === 'InvalidInput' || tag === 'NotFound';
 }
+
+export function toServiceError(error: unknown): ServiceError {
+  if (isServiceError(error)) return error;
+  if (error instanceof Error) return invalidInput(error.message);
+  return invalidInput(String(error));
+}
