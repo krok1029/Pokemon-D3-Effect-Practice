@@ -32,3 +32,5 @@ export interface PokemonRepository {
   list(params: PokemonListParams): Promise<PokemonListResult>;
 }
 
+
+export type { Pokemon } from './Pokemon';

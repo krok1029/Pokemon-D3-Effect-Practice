@@ -183,7 +183,7 @@ function parseRow(row: unknown, index: number): PokemonCsvRow {
   for (const key of AGAINST_FIELDS) {
     const value = parseNumber(record, key, index, true);
     if (value !== undefined) {
-      (out as Record<string, number | undefined>)[key] = value;
+      (out as unknown as Record<string, number | undefined>)[key] = value;
     }
   }
 
@@ -206,9 +206,9 @@ export function parsePokemonCsv(rows: unknown[]): PokemonCsvRow[] {
 // 方便安全索引 "Against XXX" 欄位
 export function toPokemon(row: PokemonCsvRow): Pokemon {
   // 建 against 物件（避免 any）
-  const r = row as unknown as Record<AgainstKey, number | undefined>;
+  const indexed = row as unknown as Record<AgainstKey, number | undefined>;
   const against = Object.fromEntries(
-    TYPES.map((t) => [t, toMultiplier(r[`Against ${t}` as AgainstKey])])
+    TYPES.map((t) => [t, toMultiplier(indexed[`Against ${t}` as AgainstKey])])
   ) as Record<TypeName, Multiplier>;
 
   return {
