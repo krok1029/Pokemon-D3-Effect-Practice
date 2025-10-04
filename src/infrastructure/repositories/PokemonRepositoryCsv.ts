@@ -1,5 +1,4 @@
 // src/infrastructure/repositories/PokemonRepositoryCsv.ts
-import { Effect } from 'effect';
 import { readCsv } from '@/infrastructure/csv/CsvService';
 import type { Pokemon } from '@/domain/pokemon';
 import { parsePokemonCsv, toPokemon } from '@/infrastructure/csv/pokemonCsv';
@@ -40,14 +39,11 @@ export class PokemonRepositoryCsv implements PokemonRepository {
     if (!force && this.data) {
       return this.data;
     }
-    const rows = await Effect.runPromise(
-      readCsv(this.path).pipe(
-        Effect.flatMap(parsePokemonCsv),
-        Effect.map((rows) => rows.map(toPokemon)),
-      )
-    );
-    this.data = rows;
-    return rows;
+    const rawRows = await readCsv(this.path);
+    const parsedRows = parsePokemonCsv(rawRows);
+    const pokemon = parsedRows.map(toPokemon);
+    this.data = pokemon;
+    return pokemon;
   }
 
   getAll(): Promise<ReadonlyArray<Pokemon>> {
