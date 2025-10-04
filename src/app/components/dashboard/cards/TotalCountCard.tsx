@@ -1,5 +1,13 @@
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import Link from 'next/link';
+
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/app/components/ui/card';
 
 export default function TotalCountCard({ total }: { total: number }) {
   return (
@@ -17,10 +25,7 @@ export default function TotalCountCard({ total }: { total: number }) {
         </CardDescription>
         <CardAction />
       </CardHeader>
-      <CardContent className="text-5xl font-extrabold text-end">
-        {total}
-      </CardContent>
+      <CardContent className="text-end text-5xl font-extrabold">{total}</CardContent>
     </Card>
   );
 }
-

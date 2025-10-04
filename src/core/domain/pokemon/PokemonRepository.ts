@@ -25,12 +25,8 @@ export interface PokemonListResult {
 export interface PokemonRepository {
   getAll(): Promise<ReadonlyArray<Pokemon>>;
   getById(id: number): Promise<Pokemon>;
-  getByIdWithSimilar(
-    id: number,
-    k: number
-  ): Promise<{ pokemon: Pokemon; similar: Pokemon[] }>;
+  getByIdWithSimilar(id: number, k: number): Promise<{ pokemon: Pokemon; similar: Pokemon[] }>;
   list(params: PokemonListParams): Promise<PokemonListResult>;
 }
-
 
 export type { Pokemon } from './Pokemon';

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { list, type QueryInput } from '@/core/application/pokemon/ListPokemons';
+
 import { getPokemonRepository } from '@/adapters/config';
 
 // 將 URLSearchParams 轉換為 UseCase 的 QueryInput
@@ -16,7 +18,7 @@ export async function GET(req: NextRequest) {
   if (result._tag === 'Left') {
     return NextResponse.json(
       { error: { code: 'INVALID_INPUT', message: result.left.message } },
-      { status: 400 }
+      { status: 400 },
     );
   }
   return NextResponse.json(result.right);

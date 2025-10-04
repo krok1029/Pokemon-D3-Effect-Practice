@@ -20,7 +20,7 @@ export function isErr<E, A>(result: Result<E, A>): result is Left<E> {
 
 export async function wrap<E, A>(
   fn: () => Promise<A>,
-  onError: (error: unknown) => E
+  onError: (error: unknown) => E,
 ): Promise<Result<E, A>> {
   try {
     const value = await fn();

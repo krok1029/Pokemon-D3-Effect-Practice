@@ -1,7 +1,14 @@
-"use client";
+'use client';
 import * as d3 from 'd3';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/app/components/ui/tooltip';
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/app/components/ui/tooltip';
+
 import { validateRadarE, maxFrom, pointsFor, ticksFor, type Point } from './utils/radar';
 
 export type RadarChartProps = {
@@ -42,19 +49,22 @@ export default function RadarChart({
   }, []);
 
   type MouseLike = Pick<MouseEvent, 'clientX' | 'clientY'>;
-  const scheduleTip = useCallback((text: string, e: MouseLike) => {
-    const wrap = wrapRef.current;
-    if (!wrap) return;
-    const rect = wrap.getBoundingClientRect();
-    pendingTipRef.current = {
-      text,
-      x: e.clientX - rect.left + 10,
-      y: e.clientY - rect.top + 10,
-    };
-    if (rafIdRef.current == null) {
-      rafIdRef.current = requestAnimationFrame(commitTip);
-    }
-  }, [commitTip]);
+  const scheduleTip = useCallback(
+    (text: string, e: MouseLike) => {
+      const wrap = wrapRef.current;
+      if (!wrap) return;
+      const rect = wrap.getBoundingClientRect();
+      pendingTipRef.current = {
+        text,
+        x: e.clientX - rect.left + 10,
+        y: e.clientY - rect.top + 10,
+      };
+      if (rafIdRef.current == null) {
+        rafIdRef.current = requestAnimationFrame(commitTip);
+      }
+    },
+    [commitTip],
+  );
 
   const hideTip = useCallback(() => {
     setTipOpen(false);
@@ -116,8 +126,10 @@ export default function RadarChart({
 
       axes
         .append('line')
-        .attr('x1', 0).attr('y1', 0)
-        .attr('x2', x).attr('y2', y)
+        .attr('x1', 0)
+        .attr('y1', 0)
+        .attr('x2', x)
+        .attr('y2', y)
         .attr('stroke', 'currentColor')
         .attr('stroke-opacity', 0.25);
 
@@ -125,14 +137,15 @@ export default function RadarChart({
       const ty = Math.sin(a) * (r + 12);
       axes
         .append('text')
-        .attr('x', tx).attr('y', ty)
+        .attr('x', tx)
+        .attr('y', ty)
         .attr(
           'text-anchor',
-          Math.abs(Math.cos(a)) < 0.15 ? 'middle' : Math.cos(a) > 0 ? 'start' : 'end'
+          Math.abs(Math.cos(a)) < 0.15 ? 'middle' : Math.cos(a) > 0 ? 'start' : 'end',
         )
         .attr(
           'dominant-baseline',
-          Math.abs(Math.sin(a)) < 0.15 ? 'middle' : Math.sin(a) > 0 ? 'hanging' : 'auto'
+          Math.abs(Math.sin(a)) < 0.15 ? 'middle' : Math.sin(a) > 0 ? 'hanging' : 'auto',
         )
         .attr('font-size', 12)
         .attr('fill', 'currentColor')
@@ -161,8 +174,7 @@ export default function RadarChart({
     const baseR = 5;
     const hoverR = 8;
 
-    g
-      .selectAll<SVGCircleElement, DataPoint>('circle.data-point')
+    g.selectAll<SVGCircleElement, DataPoint>('circle.data-point')
       .data(points.map((p, i) => ({ p, i })))
       .enter()
       .append('circle')
@@ -201,7 +213,10 @@ export default function RadarChart({
   }, [labels, values, maxValue, size.width, size.height, levels, scheduleTip, hideTip, commitTip]);
 
   return (
-    <div ref={wrapRef} className={["relative text-emerald-400", className].filter(Boolean).join(" ") }>
+    <div
+      ref={wrapRef}
+      className={['relative text-emerald-400', className].filter(Boolean).join(' ')}
+    >
       <svg ref={svgRef} role="img" aria-label="Radar chart" />
       <TooltipProvider>
         <Tooltip open={tipOpen} onOpenChange={(o) => setTipOpen(o)}>

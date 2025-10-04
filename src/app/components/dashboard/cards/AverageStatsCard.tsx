@@ -1,7 +1,16 @@
-import { type AverageStats, type StatKey } from '@/core/application/pokemon/AverageStats';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
-import RadarChart from '@/app/components/charts/RadarChart';
 import Link from 'next/link';
+
+import RadarChart from '@/app/components/charts/RadarChart';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/app/components/ui/card';
+
+import { type AverageStats, type StatKey } from '@/core/application/pokemon/AverageStats';
 import { MAX_STAT } from '@/core/domain/constants';
 
 const DISPLAY_LABEL: Record<StatKey, string> = {
@@ -50,14 +59,14 @@ export default function AverageStatsCard({ data }: { data: AverageStats }) {
       </CardHeader>
 
       <CardContent>
-        <div className="flex flex-col md:flex-row gap-6 items-center">
+        <div className="flex flex-col items-center gap-6 md:flex-row">
           <div className="text-emerald-400">
             <RadarChart labels={labels} values={values} maxValue={max} />
           </div>
 
-          <ul className="text-sm grid grid-cols-2 gap-x-6 gap-y-1">
+          <ul className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
             {avgs.map((a) => (
-              <li key={a.key} className="flex justify-between min-w-[160px]">
+              <li key={a.key} className="flex min-w-[160px] justify-between">
                 <span className="text-muted-foreground">{DISPLAY_LABEL[a.key]}</span>
                 <span className="font-medium">{a.value}</span>
               </li>

@@ -1,18 +1,19 @@
 import 'reflect-metadata';
 import path from 'node:path';
-import type { PokemonRepository } from '@/core/domain/pokemon/PokemonRepository';
-import { PokemonRepositoryCsv } from '@/adapters/repo/PokemonRepositoryCsv';
 import { container } from 'tsyringe';
+
 import { TOKENS } from '@/di/tokens';
+
+import type { PokemonRepository } from '@/core/domain/pokemon/PokemonRepository';
+
+import { PokemonRepositoryCsv } from '@/adapters/repo/PokemonRepositoryCsv';
 
 function resolveDataPath(): string {
   const envPath = process.env.POKEMON_DATA_PATH;
   if (envPath) return path.resolve(process.cwd(), envPath);
   return path.resolve(
     process.cwd(),
-    process.env.NODE_ENV === 'test'
-      ? 'data/pokemon_fixture_30.csv'
-      : 'data/pokemonCsv.csv'
+    process.env.NODE_ENV === 'test' ? 'data/pokemon_fixture_30.csv' : 'data/pokemonCsv.csv',
   );
 }
 

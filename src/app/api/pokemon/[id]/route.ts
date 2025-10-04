@@ -1,10 +1,12 @@
 // API 路由：/api/pokemon/[id]
 import { NextRequest, NextResponse } from 'next/server';
+
 import {
   detail,
   type PathInput,
   type QueryInput,
 } from '@/core/application/pokemon/GetPokemonDetail';
+
 import { getPokemonRepository } from '@/adapters/config';
 
 function getPathInput(params: { id: string }): PathInput {
@@ -26,10 +28,7 @@ export async function GET(req: NextRequest, ctx: { params: { id: string } }) {
   if (result._tag === 'Left') {
     const status = result.left._tag === 'NotFound' ? 404 : 400;
     const code = result.left._tag === 'NotFound' ? 'NOT_FOUND' : 'INVALID_INPUT';
-    return NextResponse.json(
-      { error: { code, message: result.left.message } },
-      { status }
-    );
+    return NextResponse.json({ error: { code, message: result.left.message } }, { status });
   }
   return NextResponse.json(result.right);
 }

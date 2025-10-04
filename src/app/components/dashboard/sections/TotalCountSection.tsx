@@ -1,7 +1,10 @@
-import { getPokemonRepository } from '@/adapters/config';
-import { list } from '@/core/application/pokemon/ListPokemons';
-import TotalCountCard from '../cards/TotalCountCard';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
+
+import { list } from '@/core/application/pokemon/ListPokemons';
+
+import { getPokemonRepository } from '@/adapters/config';
+
+import TotalCountCard from '../cards/TotalCountCard';
 
 export default async function TotalCountSection() {
   const repo = getPokemonRepository();

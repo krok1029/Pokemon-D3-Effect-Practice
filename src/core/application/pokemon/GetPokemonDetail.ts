@@ -1,8 +1,9 @@
-import { err, ok, type Result } from '@/core/shared/result';
 import {
   NotFound as RepoNotFound,
   type PokemonRepository,
 } from '@/core/domain/pokemon/PokemonRepository';
+import { err, ok, type Result } from '@/core/shared/result';
+
 import { invalidInput, toServiceError, type ServiceError } from '../errors';
 
 const DEFAULT_SIMILAR_COUNT = 5;
@@ -16,13 +17,11 @@ export type QueryInput = { k?: QueryInputValue };
 type DetailInput = { path: PathInput; query: QueryInput };
 type DetailParams = { id: number; similarCount: number };
 
-type DetailResult = Awaited<
-  ReturnType<PokemonRepository['getByIdWithSimilar']>
->;
+type DetailResult = Awaited<ReturnType<PokemonRepository['getByIdWithSimilar']>>;
 
 export async function detail(
   repo: PokemonRepository,
-  input: DetailInput
+  input: DetailInput,
 ): Promise<Result<ServiceError | RepoNotFound, DetailResult>> {
   try {
     const { id, similarCount } = parseDetailInput(input);
@@ -38,9 +37,8 @@ export async function detail(
 
 function parseDetailInput(input: DetailInput): DetailParams {
   const id = parseRequiredNumber(input.path.id, 'id');
-  const similarCount = input.query.k == null
-    ? DEFAULT_SIMILAR_COUNT
-    : parseRequiredNumber(input.query.k, 'k');
+  const similarCount =
+    input.query.k == null ? DEFAULT_SIMILAR_COUNT : parseRequiredNumber(input.query.k, 'k');
 
   return { id, similarCount };
 }

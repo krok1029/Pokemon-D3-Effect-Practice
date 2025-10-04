@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
+
+import { NotFound } from '@/core/domain/pokemon/PokemonRepository';
+
 import { readCsv } from '@/adapters/csv/CsvService';
 import { parsePokemonCsv } from '@/adapters/csv/pokemonCsv';
 import { PokemonRepositoryCsv } from '@/adapters/repo/PokemonRepositoryCsv';
-import { NotFound } from '@/core/domain/pokemon/PokemonRepository';
 
 const FIXTURE = 'data/pokemon_fixture_30.csv';
 

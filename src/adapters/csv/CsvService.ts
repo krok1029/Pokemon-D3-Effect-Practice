@@ -1,6 +1,6 @@
 // 基礎設施層：CSV 讀取服務（純 I/O 工具）
-import fs from 'node:fs/promises';
 import { parse } from 'csv-parse/sync';
+import fs from 'node:fs/promises';
 
 export class DataLoadError extends Error {}
 

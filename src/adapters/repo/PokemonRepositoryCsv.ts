@@ -1,13 +1,14 @@
 // 基礎設施層：以 CSV 作為資料來源的 Pokemon Repository 實作
-import { readCsv } from '@/adapters/csv/CsvService';
 import type { Pokemon } from '@/core/domain/pokemon/Pokemon';
-import { parsePokemonCsv, toPokemon } from '@/adapters/csv/pokemonCsv';
 import {
   PokemonRepository,
   NotFound,
   PokemonListParams,
   PokemonListResult,
 } from '@/core/domain/pokemon/PokemonRepository';
+
+import { readCsv } from '@/adapters/csv/CsvService';
+import { parsePokemonCsv, toPokemon } from '@/adapters/csv/pokemonCsv';
 
 export { NotFound } from '@/core/domain/pokemon/PokemonRepository';
 
@@ -56,10 +57,7 @@ export class PokemonRepositoryCsv implements PokemonRepository {
     return p;
   }
 
-  async getByIdWithSimilar(
-    id: number,
-    k = 5
-  ): Promise<{ pokemon: Pokemon; similar: Pokemon[] }> {
+  async getByIdWithSimilar(id: number, k = 5): Promise<{ pokemon: Pokemon; similar: Pokemon[] }> {
     const kk = Math.max(0, Math.min(50, Math.floor(k)));
     const rows = await this.load();
     const self = rows.find((p) => p.id === id);
@@ -170,4 +168,3 @@ export class PokemonRepositoryCsv implements PokemonRepository {
     return { total: xs.length, page, pageSize, data };
   }
 }
-

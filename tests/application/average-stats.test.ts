@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { average } from '@/core/application/pokemon/AverageStats';
 import type { Pokemon, PokemonRepository } from '@/core/domain/pokemon/PokemonRepository';
 import { TYPES } from '@/core/domain/pokemon/types';
@@ -9,7 +10,15 @@ describe('Application:average', () => {
   it('computes per-metric averages and rounds to 0.1', async () => {
     const repo: PokemonRepository = {
       getAll: async () => [
-        createPokemon({ id: 1, hp: 10, attack: 20, defense: 30, sp_atk: 40, sp_def: 50, speed: 60 }),
+        createPokemon({
+          id: 1,
+          hp: 10,
+          attack: 20,
+          defense: 30,
+          sp_atk: 40,
+          sp_def: 50,
+          speed: 60,
+        }),
         createPokemon({ id: 2, hp: 0, attack: 10, defense: 20, sp_atk: 30, sp_def: 40, speed: 50 }),
       ],
       getById: async () => createPokemon({ id: 99 }),

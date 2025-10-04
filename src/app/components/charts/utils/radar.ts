@@ -5,7 +5,7 @@ export type Point = { x: number; y: number };
 
 export const validateRadarE = (
   labels: string[],
-  values: number[]
+  values: number[],
 ): Result<Error, { n: number }> => {
   if (labels.length === 0) {
     return err(new Error('labels is empty'));
@@ -50,4 +50,3 @@ export function ticksFor(max: number, levels: number): number[] {
   for (let i = 1; i <= count; i++) ticks.push(Math.round(step * i));
   return ticks;
 }
-

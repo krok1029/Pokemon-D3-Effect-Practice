@@ -1,6 +1,4 @@
-export function toBoolLike(
-  raw?: string | number | boolean | null
-): boolean | undefined {
+export function toBoolLike(raw?: string | number | boolean | null): boolean | undefined {
   if (raw == null) return undefined;
   if (typeof raw === 'boolean') return raw;
   if (typeof raw === 'number') return raw !== 0;

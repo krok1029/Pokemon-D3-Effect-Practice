@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { toBoolLike } from '@/core/shared/bool';
 describe('toBoolLike', () => {
   const truthy = ['true', '1', '1.0', 'yes', 'y'];

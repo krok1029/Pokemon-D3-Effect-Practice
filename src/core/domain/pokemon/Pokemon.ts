@@ -70,7 +70,7 @@ export function toMultiplier(n: number | undefined): Multiplier {
 
 export function multiplyAgainst(
   a: Record<TypeName, Multiplier>,
-  b?: Record<TypeName, Multiplier>
+  b?: Record<TypeName, Multiplier>,
 ): Record<TypeName, Multiplier> {
   const legal: Multiplier[] = [0, 0.25, 0.5, 1, 2, 4];
   const out = {} as Record<TypeName, Multiplier>;
@@ -84,4 +84,3 @@ export function multiplyAgainst(
   }
   return out;
 }
-

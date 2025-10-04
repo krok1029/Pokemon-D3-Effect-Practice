@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { list } from '@/core/application/pokemon/ListPokemons';
 import type {
   Pokemon,
@@ -79,4 +80,3 @@ describe('Application:list', () => {
     }
   });
 });
-

@@ -1,5 +1,6 @@
 // tests/adapters/pokemonCsv.test.ts
 import { describe, it, expect } from 'vitest';
+
 import { parsePokemonCsv, toPokemon } from '@/adapters/csv/pokemonCsv';
 
 describe('Domain：CSV Row → 內部模型映射', () => {

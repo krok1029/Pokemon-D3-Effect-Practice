@@ -1,5 +1,6 @@
 // tests/integration/csv-read.test.ts
 import { describe, it, expect } from 'vitest';
+
 import { readCsv } from '@/adapters/csv/CsvService';
 import { parsePokemonCsv } from '@/adapters/csv/pokemonCsv';
 

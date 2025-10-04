@@ -1,10 +1,13 @@
-import { describe, it, expect, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { TYPES, type TypeName, type Multiplier } from '@/core/domain/pokemon/types';
+import { describe, it, expect, afterEach } from 'vitest';
+
+import { GET } from '@/app/api/pokemon/route';
+
 import type { Pokemon } from '@/core/domain/pokemon/Pokemon';
 import type { PokemonRepository } from '@/core/domain/pokemon/PokemonRepository';
+import { TYPES, type TypeName, type Multiplier } from '@/core/domain/pokemon/types';
+
 import { setPokemonRepository, createPokemonRepository } from '@/adapters/config';
-import { GET } from '@/app/api/pokemon/route';
 
 class MockRepo implements PokemonRepository {
   constructor(private readonly data: Pokemon[]) {}
@@ -31,9 +34,7 @@ class MockRepo implements PokemonRepository {
 }
 
 function dummyPokemon(id: number): Pokemon {
-  const against = Object.fromEntries(
-    TYPES.map((t) => [t, 1])
-  ) as Record<TypeName, Multiplier>;
+  const against = Object.fromEntries(TYPES.map((t) => [t, 1])) as Record<TypeName, Multiplier>;
   return {
     id,
     name: `P${id}`,

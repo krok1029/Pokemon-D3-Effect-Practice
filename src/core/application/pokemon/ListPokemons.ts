@@ -1,6 +1,7 @@
 import type { PokemonListResult, PokemonRepository } from '@/core/domain/pokemon/PokemonRepository';
-import { err, ok, type Result } from '@/core/shared/result';
 import { toBoolLike } from '@/core/shared/bool';
+import { err, ok, type Result } from '@/core/shared/result';
+
 import { invalidInput, toServiceError, type ServiceError } from '../errors';
 
 const DEFAULT_PAGE = 1;
@@ -62,7 +63,7 @@ type ParsedQuery = {
 
 export async function list(
   repo: PokemonRepository,
-  input: QueryInput
+  input: QueryInput,
 ): Promise<Result<ServiceError, PokemonListResult>> {
   try {
     const query = decodeQuery(input);
@@ -122,9 +123,7 @@ function normalizePageSize(raw?: number): number {
   return DEFAULT_PAGE_SIZE;
 }
 
-function normalizeSort(
-  input?: string
-): `${SortKey}:${'asc' | 'desc'}` | undefined {
+function normalizeSort(input?: string): `${SortKey}:${'asc' | 'desc'}` | undefined {
   if (!input) return undefined;
   const [rawKey, rawDir] = input.split(':').map((value) => value?.trim().toLowerCase());
   if (!SORTABLE_KEYS.has(rawKey as SortKey)) return undefined;

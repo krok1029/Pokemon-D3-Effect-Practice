@@ -1,16 +1,10 @@
 import type { Pokemon } from '@/core/domain/pokemon/Pokemon';
 import type { PokemonRepository } from '@/core/domain/pokemon/PokemonRepository';
 import { err, ok, type Result } from '@/core/shared/result';
+
 import { toServiceError, type ServiceError } from '../errors';
 
-const METRICS = [
-  'hp',
-  'attack',
-  'defense',
-  'sp_atk',
-  'sp_def',
-  'speed',
-] as const;
+const METRICS = ['hp', 'attack', 'defense', 'sp_atk', 'sp_def', 'speed'] as const;
 
 export type StatKey = (typeof METRICS)[number];
 
@@ -20,7 +14,7 @@ export type AverageStats = {
 };
 
 export async function average(
-  repo: PokemonRepository
+  repo: PokemonRepository,
 ): Promise<Result<ServiceError, AverageStats>> {
   try {
     const pokemons = await repo.getAll();
@@ -50,10 +44,13 @@ function aggregateStats(rows: ReadonlyArray<Pokemon>): AverageStats {
 }
 
 function initTotals(): Record<StatKey, number> {
-  return METRICS.reduce<Record<StatKey, number>>((acc, metric) => {
-    acc[metric] = 0;
-    return acc;
-  }, {} as Record<StatKey, number>);
+  return METRICS.reduce<Record<StatKey, number>>(
+    (acc, metric) => {
+      acc[metric] = 0;
+      return acc;
+    },
+    {} as Record<StatKey, number>,
+  );
 }
 
 function roundToTenths(value: number): number {

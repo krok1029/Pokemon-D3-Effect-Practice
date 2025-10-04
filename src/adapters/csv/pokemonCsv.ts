@@ -1,5 +1,4 @@
 // 基礎設施層：Pokemon CSV 解析與映射
-import { DataLoadError } from './CsvService';
 import {
   parseAbilities,
   toTypeName,
@@ -8,6 +7,8 @@ import {
 } from '@/core/domain/pokemon/Pokemon';
 import { TYPES, type TypeName, type Multiplier } from '@/core/domain/pokemon/types';
 import { toBoolLike } from '@/core/shared/bool';
+
+import { DataLoadError } from './CsvService';
 
 const AGAINST_FIELDS = [
   'Against Normal',
@@ -83,7 +84,7 @@ function parseNumber(
   record: Record<string, unknown>,
   key: string,
   index: number,
-  optional = false
+  optional = false,
 ): number | undefined {
   const raw = record[key];
   if (raw == null || raw === '') {
@@ -109,7 +110,7 @@ function parseString(
   record: Record<string, unknown>,
   key: string,
   index: number,
-  optional = false
+  optional = false,
 ): string | undefined {
   const raw = record[key];
   if (raw == null) {
@@ -162,8 +163,7 @@ function parseRow(row: unknown, index: number): PokemonCsvRow {
   if (exp100 !== undefined) out['Experience to level 100'] = exp100;
 
   const finalEvolution = parseString(record, 'Final Evolution', index, true);
-  if (finalEvolution)
-    out['Final Evolution'] = finalEvolution;
+  if (finalEvolution) out['Final Evolution'] = finalEvolution;
 
   const catchRate = parseNumber(record, 'Catch Rate', index, true);
   if (catchRate !== undefined) out['Catch Rate'] = catchRate;
@@ -208,7 +208,7 @@ export function toPokemon(row: PokemonCsvRow): Pokemon {
   // 建 against 物件（避免 any）
   const indexed = row as unknown as Record<AgainstKey, number | undefined>;
   const against = Object.fromEntries(
-    TYPES.map((t) => [t, toMultiplier(indexed[`Against ${t}` as AgainstKey])])
+    TYPES.map((t) => [t, toMultiplier(indexed[`Against ${t}` as AgainstKey])]),
   ) as Record<TypeName, Multiplier>;
 
   return {
@@ -241,4 +241,3 @@ export function toPokemon(row: PokemonCsvRow): Pokemon {
     bmi: row.BMI ?? undefined,
   };
 }
-

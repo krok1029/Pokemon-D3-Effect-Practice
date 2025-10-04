@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { detail } from '@/core/application/pokemon/GetPokemonDetail';
 import type { Pokemon, PokemonRepository } from '@/core/domain/pokemon/PokemonRepository';
 import { NotFound } from '@/core/domain/pokemon/PokemonRepository';
