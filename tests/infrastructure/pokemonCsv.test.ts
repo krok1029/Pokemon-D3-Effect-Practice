@@ -1,7 +1,6 @@
 // tests/infrastructure/pokemonCsv.test.ts
 import { describe, it, expect } from 'vitest';
-import * as S from 'effect/Schema';
-import { PokemonCsvRow, toPokemon } from '@/infrastructure/csv/pokemonCsv';
+import { parsePokemonCsv, toPokemon } from '@/infrastructure/csv/pokemonCsv';
 
 describe('Domain：CSV Row → 內部模型映射', () => {
   it('能把最小必要欄位的 Row 轉為內部 Pokemon 物件', () => {
@@ -15,7 +14,7 @@ describe('Domain：CSV Row → 內部模型映射', () => {
       // 其餘欄位缺省 → Schema 允許；Against* 會在映射時補 1
     };
 
-    const decoded = S.decodeUnknownSync(PokemonCsvRow)(rowLike);
+    const [decoded] = parsePokemonCsv([rowLike]);
     const p = toPokemon(decoded);
 
     expect(p.id).toBe(25);

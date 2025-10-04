@@ -9,12 +9,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { getPokemonRepository } from '@/infrastructure/config';
-import { Effect } from 'effect';
 import Link from 'next/link';
 
 export default async function Home() {
   const repo = getPokemonRepository();
-  const result = await Effect.runPromise(list(repo, {}));
+  const result = await list(repo, {});
 
   if (result._tag === 'Left') {
     return <div>錯誤: {result.left.message}</div>;

@@ -1,6 +1,5 @@
 // src/app/api/pokemon/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { Effect } from 'effect';
 import {
   detail,
   PathInput,
@@ -19,9 +18,10 @@ function getQueryInput(req: NextRequest): QueryInput {
 
 export async function GET(req: NextRequest, ctx: { params: { id: string } }) {
   const repo = getPokemonRepository();
-  const result = await Effect.runPromise(
-    detail(repo, { path: getPathInput(ctx.params), query: getQueryInput(req) })
-  );
+  const result = await detail(repo, {
+    path: getPathInput(ctx.params),
+    query: getQueryInput(req),
+  });
   if (result._tag === 'Left') {
     const status = result.left._tag === 'NotFound' ? 404 : 400;
     const code = result.left._tag === 'NotFound' ? 'NOT_FOUND' : 'INVALID_INPUT';

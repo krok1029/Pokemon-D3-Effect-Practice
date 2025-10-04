@@ -1,18 +1,20 @@
 // src/infrastructure/csv/CsvService.ts
-import { Effect } from 'effect';
 import fs from 'node:fs/promises';
 import { parse } from 'csv-parse/sync';
 
 export class DataLoadError extends Error {}
 
-export const readCsv = (
-  path: string
-): Effect.Effect<unknown[], DataLoadError> =>
-  Effect.tryPromise({
-    try: () => fs.readFile(path, 'utf8'),
-    catch: (e) => new DataLoadError(`Failed to read CSV: ${JSON.stringify(e)}`),
-  }).pipe(
-    Effect.map((raw) =>
-      parse(raw, { columns: true, skip_empty_lines: true }) as unknown[]
-    )
-  );
+export async function readCsv(path: string): Promise<unknown[]> {
+  try {
+    const raw = await fs.readFile(path, 'utf8');
+    return parse(raw, { columns: true, skip_empty_lines: true }) as unknown[];
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : JSON.stringify(error);
+    throw new DataLoadError(`Failed to read CSV: ${message}`);
+  }
+}
