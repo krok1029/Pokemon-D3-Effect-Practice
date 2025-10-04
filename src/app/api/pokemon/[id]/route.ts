@@ -6,23 +6,24 @@ import {
   type PathInput,
   type QueryInput,
 } from '@/core/application/pokemon/GetPokemonDetail';
-
 import { getPokemonRepository } from '@/adapters/config';
 
-function getPathInput(params: { id: string }): PathInput {
-  return { id: params.id };
-}
+type RouteContext = { params: Promise<{ id: string }> };
 
 function getQueryInput(req: NextRequest): QueryInput {
   const url = new URL(req.url);
-  const entries = Object.fromEntries(url.searchParams.entries());
-  return entries as QueryInput;
+  return Object.fromEntries(url.searchParams.entries()) as QueryInput;
 }
 
-export async function GET(req: NextRequest, ctx: { params: { id: string } }) {
+async function getPathInput(ctx: RouteContext): Promise<PathInput> {
+  const params = await ctx.params;
+  return { id: params.id };
+}
+
+export async function GET(req: NextRequest, ctx: RouteContext) {
   const repo = getPokemonRepository();
   const result = await detail(repo, {
-    path: getPathInput(ctx.params),
+    path: await getPathInput(ctx),
     query: getQueryInput(req),
   });
   if (result._tag === 'Left') {
