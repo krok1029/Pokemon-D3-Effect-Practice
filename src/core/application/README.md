@@ -5,4 +5,4 @@
 - 用例：位於 `pokemon/*.ts`，負責輸入驗證、呼叫 `PokemonRepository` 介面、回傳自訂的 `Result`（`Left`/`Right`）方便 UI/Routes 分支處理。
 - 錯誤模型：`errors.ts` 定義應用層錯誤類型，統一錯誤邊界（例如 InvalidInput、NotFound 等）。
 
-依賴注入（Composition Root）在 `src/adapters/config/index.ts` 提供 `getPokemonRepository()`；UI/Routes 透過此函式取得實作，Application 層只接收介面參數。
+依賴注入（Composition Root）目前由 `src/server/pokemonRepository.ts` 提供 `getPokemonRepository()`；UI/Routes 透過此函式取得實作，Application 層只接收介面參數。

@@ -2,7 +2,7 @@
 
 ## 任務概述
 - 目標：打造互動式 Pokémon 資料儀表板，透過 D3 呈現 CSV 資料，並維持良好可測性與擴充性。
-- 原則：UI 層僅負責呈現與簡單轉接；商業邏輯收斂在 core；所有外部資源透過 adapters 實作並由 DI 管理。
+- 原則：UI 層僅負責呈現與簡單轉接；商業邏輯收斂在 core；所有外部資源透過 infra 層實作並由 DI 管理。
 
 ## 技術棧
 - 前端：Next.js 15（App Router）、React 19、Tailwind CSS 4、shadcn/ui、D3 v7、Radix Tooltip。
@@ -16,11 +16,11 @@
   - `domain`：實體、值物件、`PokemonRepository` 介面、領域錯誤。
   - `application`：UseCase（如 `ListPokemons`），負責解析輸入、調用 Repository、回傳 `Result<ServiceError, Payload>`。
   - `shared`：通用工具（`result.ts`, `bool.ts` 等）。
-- `src/adapters`（Adapters 層）：具體連接外部資源，目前以 CSV 檔案為資料來源。`repo/` 提供 `PokemonRepositoryCsv`，`csv/` 內含解析與轉換工具，`config/index.ts` 組裝 DI。
+- `src/infra`（Infrastructure 層）：具體連接外部資源，目前以 CSV 檔案為資料來源，包含 `pokemonCsvRepository.ts` 與 `csv/readCsv.ts`。單例組態由 `src/server/pokemonRepository.ts` 負責。
 
 ## 資料流與設定
 1. UI 或 API Route 解析參數並呼叫核心 UseCase（例如 `ListPokemons`）。
-2. UseCase 依賴 `PokemonRepository` 介面向 adapters 取得資料。
+2. UseCase 依賴 `PokemonRepository` 介面向 infra 取得資料。
 3. Repository 透過 `CsvService.readCsv` 讀取檔案，經 `parsePokemonCsv` → `toPokemon` 轉成 domain 資料。
 4. UseCase 回傳 Result；App 層據此渲染成功或錯誤回應。
 - CSV 路徑：預設 `data/pokemonCsv.csv`，測試環境自動切至 `data/pokemon_fixture_30.csv`。可透過環境變數 `POKEMON_DATA_PATH` 指向自訂檔案（會以 `process.cwd()` 為基準解析絕對路徑）。
@@ -28,7 +28,7 @@
 ## 依賴注入
 - `createPokemonRepository()` 建立新的 CSV 實作；`getPokemonRepository()` 取得目前單例。
 - `setPokemonRepository()` 可於測試或特殊情境替換實作並同步更新容器。
-- 匯入 `@/adapters/config` 會在模組初始化時完成預設註冊，確保 app 層可直接透過 tsyringe 取得 Repository。
+- `src/server/pokemonRepository.ts` 會在模組初始化時完成預設註冊，確保 app 層可直接透過 tsyringe 取得 Repository。
 
 ## UI 與 D3 注意事項
 - Server Components（例如 dashboard sections）負責資料抓取；純展示邏輯放在 Client Components 或 `components/charts`。
@@ -51,5 +51,4 @@
 ## 風險與待辦
 - 擴充 E2E 測試以涵蓋篩選、詳細頁等關鍵互動。
 - 更新文件與行銷素材（範例截圖、GIF）以提升專案可見度。
-- 若日後導入其他資料源（API/DB），需在 adapters 層新增實作並調整 DI 組態。
-
+- 若日後導入其他資料源（API/DB），需在 infra 層新增實作並調整 DI 組態。

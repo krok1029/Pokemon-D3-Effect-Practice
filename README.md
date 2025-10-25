@@ -39,20 +39,19 @@ src
 │  ├─ application/              # UseCase，回傳 Result，僅依賴 domain 介面
 │  └─ shared/                   # 共用函式（結果型別、工具等）
 │
-├─ adapters/                    # 基礎建設層，連結外部資源
-│  ├─ config/                   # DI 組態與 repository 工廠
+├─ infra/                       # 基礎建設層，連結外部資源
 │  ├─ csv/                      # CSV 解析與資料轉換
-│  └─ repo/                     # PokemonRepository 具體實作
+│  └─ pokemonCsvRepository.ts   # PokemonRepository 具體實作
 │
 ├─ di/tokens.ts                 # tsyringe 依賴注入 Token 定義
-└─ tests/                       # Vitest 測試（domain / adapters / integration）
+└─ tests/                       # Vitest 測試（domain / infra / integration）
 ```
 
 ## 架構與資料流
 - **app layer**：Next.js 介面層（Server Components、Route Handlers），僅透過 UseCase 存取商業邏輯。
 - **core layer**：`domain` 定義模型與介面，`application` 封裝 UseCase，`shared` 放置通用工具與 Result 型別。
-- **adapters layer**：處理 CSV 存取與外部整合，提供 `PokemonRepository` 實作並注入容器。
-- **資料流**：UI / Routes → UseCase（core/application）→ Repository 介面（core/domain）→ CSV 實作（adapters）→ DTO → UI render。
+- **infra layer**：處理 CSV 存取與外部整合，提供 `PokemonRepository` 實作並注入容器。
+- **資料流**：UI / Routes → UseCase（core/application）→ Repository 介面（core/domain）→ CSV 實作（infra）→ DTO → UI render。
 
 ## CSV 資料來源
 - 預設資料：`data/pokemonCsv.csv`
@@ -65,6 +64,6 @@ src
 - CI 建議串連 `yarn lint`、`yarn typecheck`、`yarn test` 以確保品質。
 
 ## 開發筆記
-- 專案使用 tsyringe 管理 DI，若新增 repository/adapter，記得在 `src/adapters/config` 中註冊。
+- 專案使用 tsyringe 管理 DI，若新增 repository 或 infra 實作，記得同步更新組態（目前由 `src/server/pokemonRepository.ts` 統一生成單例）。
 - D3 視覺化元件位於 `src/app/components/charts`；視覺元素與資料載入分離（`sections` vs `cards`）。
 - 新增 domain 邏輯時，務必針對 `tests/domain` 或 `tests/integration` 補齊測試以維持覆蓋率。

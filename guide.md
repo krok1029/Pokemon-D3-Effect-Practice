@@ -5,7 +5,7 @@
 ## 1. 專案目標與技術棧
 - **目標**：以 Next.js App Router 建構互動式 Pokémon 資料儀表板，利用 D3.js 呈現 CSV 資料並維持良好可測性。
 - **前端**：Next.js 15、React 19、Tailwind 4、shadcn/ui、D3 7。
-- **後端/應用層**：精簡版 DDD（app / core / adapters），以 tsyringe 注入依賴。
+- **後端/應用層**：精簡版 DDD（app / core / infra），以 tsyringe 注入依賴。
 - **測試**：Vitest（單元、整合）、Playwright（E2E）。
 - **工具**：TypeScript、ESLint、Prettier、Yarn 4（Plug'n'Play）。
 
@@ -24,27 +24,27 @@
 - **application**：實作 UseCase（如 `ListPokemons`、`AverageStats`），僅依賴 domain 介面並回傳 `Result` 型別，以便標準化錯誤處理。
 - **shared**：提供共用 util（`result.ts`, `bool.ts` 等）。
 
-### 2.3 adapters 層（基礎建設）
-- 位置：`src/adapters`
-- 負責外部來源（目前是 CSV 檔案）的實作。例如 `PokemonRepositoryCsv` 將 CSV 解析成 domain 可用的資料模型。
-- `adapters/config` 內的 `getPokemonRepository()` 會根據環境返回單例 repository，並透過 tsyringe 的 token 完成依賴注入。
+### 2.3 infra 層（基礎建設）
+- 位置：`src/infra`
+- 負責外部來源（目前是 CSV 檔案）的實作，例如 `pokemonCsvRepository.ts` 與 `csv/readCsv.ts`。
+- DI 組態由 `src/server/pokemonRepository.ts` 提供單例，並透過 tsyringe token 注入。
 
 ## 3. 資料流與配置
 1. UI 或 API Route 呼叫 core/application 的 UseCase。
 2. UseCase 透過注入的 `PokemonRepository` 取得資料。
-3. Repository 讀取 CSV 並轉換為 domain 定義的資料結構（parse 於 `adapters/csv`）。
+3. Repository 讀取 CSV 並轉換為 domain 定義的資料結構（parse 於 `infra/csv`）。
 4. UseCase 回傳 `Result`，app 層依結果渲染 UI 或錯誤訊息。
 
 ### 3.1 CSV 路徑
 - 預設使用 `data/pokemonCsv.csv`。
-- 測試環境會使用 `data/pokemon_fixture_30.csv`（於 `adapters/config` 內設定）。
+- 測試環境會使用 `data/pokemon_fixture_30.csv`（於 `src/server/pokemonRepository.ts` 中設定）。
 - 若需改用其他 CSV，可設定環境變數 `POKEMON_DATA_PATH=/absolute/path/to/file.csv`。
 
 ## 4. 依賴注入與設定
 - DI token 定義於 `src/di/tokens.ts`。
-- `src/adapters/config/index.ts` 建立 repository 實例並註冊至 tsyringe 容器。
+- `src/server/pokemonRepository.ts` 建立 repository 單例並註冊至 tsyringe 容器。
 - 單元測試或特殊情境可呼叫 `setPokemonRepository()` 以替換實作。
-- 若新增新的 repository/adapter，記得更新此設定檔以維持注入一致性。
+- 若新增新的 repository 或 infra 實作，記得更新此設定檔以維持注入一致性。
 
 ## 5. UI 與 D3 元件指南
 - 所有 UI 元件位於 `src/app/components`，依功能拆分：
@@ -55,7 +55,7 @@
 - 建議 chart 元件輸入為明確的資料結構（例如統計值或陣列），避免在元件內直接處理 repository。
 
 ## 6. 測試策略
-- **單元測試**：`tests/domain`、`tests/application`、`tests/adapters`。透過 Vitest 驗證純函式與 UseCase 行為。
+- **單元測試**：`tests/domain`、`tests/application`、`tests/infra`。透過 Vitest 驗證純函式與 UseCase 行為。
 - **整合測試**：`tests/integration`。從 UseCase 到 CSV 實作驗證實際資料讀取流程。
 - **E2E 測試**：`tests/e2e`。使用 Playwright 驗證主要使用者流程（例如首頁是否正確渲染卡片）。
 - 常用指令：
@@ -73,7 +73,7 @@
 ## 8. 擴充範例
 ### 8.1 新增 UseCase
 1. 在 `src/core/application/...` 新增 UseCase，依需求調用 domain 介面並回傳 `Result`。
-2. 若需對 CSV 讀取做調整，擴充 `src/adapters/repo/PokemonRepositoryCsv.ts` 或新增新的 repository。
+2. 若需對 CSV 讀取做調整，擴充 `src/infra/pokemonCsvRepository.ts` 或新增新的 repository。
 3. 建立對應單元測試（application、domain），必要時補充整合測試。
 4. 在 app 層的 Server Component 中注入新的 UseCase 以呈現資料。
 

@@ -54,7 +54,7 @@ const config = [
                   { pattern: '@/app/**', group: 'internal', position: 'after' },
                   { pattern: '@/di/**', group: 'internal', position: 'after' },
                   { pattern: '@/core/**', group: 'internal', position: 'after' },
-                  { pattern: '@/adapters/**', group: 'internal', position: 'after' },
+                  { pattern: '@/infra/**', group: 'internal', position: 'after' },
                 ],
                 pathGroupsExcludedImportTypes: ['builtin'],
               },
