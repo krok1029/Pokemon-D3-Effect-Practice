@@ -11,24 +11,23 @@
 - 依賴注入：tsyringe + reflect-metadata，token 定義於 `src/di/tokens.ts`。
 
 ## 分層架構
-- `src/app`（App 層）：Next.js Route Handlers、Server/Client Components。禁止直接操作資料來源，所有資料透過 UseCase 取得。
+- `src/app`（App 層）：Next.js Route Handlers、Server Components、Presenter 與 View Model。透過 Presenter 呼叫 UseCase 後轉成視圖資料。
 - `src/core`（Core 層）：
-  - `domain`：實體、值物件、`PokemonRepository` 介面、領域錯誤。
-  - `application`：UseCase（如 `ListPokemons`），負責解析輸入、調用 Repository、回傳 `Result<ServiceError, Payload>`。
-  - `shared`：通用工具（`result.ts`, `bool.ts` 等）。
-- `src/infra`（Infrastructure 層）：具體連接外部資源，目前以 CSV 檔案為資料來源，包含 `pokemonCsvRepository.ts` 與 `csv/readCsv.ts`。單例組態由 `src/server/pokemonRepository.ts` 負責。
+  - `application`：UseCase 與 DTO（例如 `GetAveragePokemonStatsUseCase`），只依賴 Domain Port。
+  - `domain`：實體（`entities/`）、值物件（`valueObjects/`）、Domain Service（`services/`）、Repository Port（`repositories/`）、Specification（`specifications/`）。
+- `src/infra`（Infrastructure 層）：具體連接外部資源，目前以 CSV 檔案為資料來源，包含 `csv/CsvPokemonRepository.ts`、`csv/CsvPokemonMapper.ts` 與 `config/ConfigProvider.ts`。依賴註冊集中在 `src/server/container.ts`。
 
 ## 資料流與設定
-1. UI 或 API Route 解析參數並呼叫核心 UseCase（例如 `ListPokemons`）。
-2. UseCase 依賴 `PokemonRepository` 介面向 infra 取得資料。
-3. Repository 透過 `CsvService.readCsv` 讀取檔案，經 `parsePokemonCsv` → `toPokemon` 轉成 domain 資料。
-4. UseCase 回傳 Result；App 層據此渲染成功或錯誤回應。
+1. App 層的 Presenter（例如 `loadAverageStatsViewModel`）呼叫 UseCase。
+2. UseCase 透過 `PokemonRepository` Port 向 infra 取得資料，並交由 Domain Service（`StatsAverager`）計算後回傳 DTO。
+3. Repository 使用 `readCsv` 讀取檔案，透過 `CsvPokemonMapper` 轉成 Domain 實體。
+4. Presenter 將 DTO 轉換成 View Model（例如 `buildAverageStatsViewModel`），再交由元件渲染。
 - CSV 路徑：預設 `data/pokemonCsv.csv`，測試環境自動切至 `data/pokemon_fixture_30.csv`。可透過環境變數 `POKEMON_DATA_PATH` 指向自訂檔案（會以 `process.cwd()` 為基準解析絕對路徑）。
 
 ## 依賴注入
-- `createPokemonRepository()` 建立新的 CSV 實作；`getPokemonRepository()` 取得目前單例。
-- `setPokemonRepository()` 可於測試或特殊情境替換實作並同步更新容器。
-- `src/server/pokemonRepository.ts` 會在模組初始化時完成預設註冊，確保 app 層可直接透過 tsyringe 取得 Repository。
+- `src/server/container.ts` 匯入後即註冊設定、Repository、Domain Service 與 UseCase。
+- `src/di/tokens.ts` 定義注入 token，確保跨層依賴以介面為單位。
+- `src/server/pokemonRepository.ts`、`src/server/useCases.ts` 封裝 `container.resolve`，提供 app 層取得相依物件的入口。
 
 ## UI 與 D3 注意事項
 - Server Components（例如 dashboard sections）負責資料抓取；純展示邏輯放在 Client Components 或 `components/charts`。

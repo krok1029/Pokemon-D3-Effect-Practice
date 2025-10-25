@@ -1,12 +1,9 @@
-import type { PokemonRepository } from '@/core/domain/pokemonRepository';
+import { TOKENS } from '@/di/tokens';
 
-import { PokemonCsvRepository } from '@/infra/pokemonCsvRepository';
+import { PokemonRepository } from '@/core/domain/repositories/PokemonRepository';
 
-let repository: PokemonRepository | null = null;
+import { container } from './container';
 
 export function getPokemonRepository(): PokemonRepository {
-  if (!repository) {
-    repository = new PokemonCsvRepository({ filePath: 'data/pokemonCsv.csv' });
-  }
-  return repository;
+  return container.resolve<PokemonRepository>(TOKENS.PokemonRepository);
 }

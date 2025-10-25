@@ -28,30 +28,45 @@ yarn dev                  # 啟動開發伺服器，預設 http://localhost:3000
 
 ```
 src
-├─ app/                         # Next.js App Router 與所有 UI 元件
-│  ├─ api/pokemon/              # Route Handlers，呼叫 UseCase 後回傳 JSON
+├─ app/                         # Next.js App Router / Presenter 層
+│  ├─ (routes)/chart/           # Chart route 的 Server Component + Presenter + ViewModel
+│  │  ├─ ChartPage.tsx
+│  │  ├─ page.tsx
+│  │  ├─ presenter.ts
+│  │  └─ view-models/
+│  │     └─ averageStatsViewModel.ts
 │  ├─ components/               # UI 元件（dashboard / charts / ui）
 │  ├─ layout.tsx                # 全域佈局與 ThemeProvider
-│  └─ page.tsx, chart/, pokemon/ 等頁面
+│  └─ page.tsx, pokemon/ 等頁面
 │
-├─ core/                        # Domain + Application + Shared
-│  ├─ domain/                   # 實體、值物件、Repository 介面、不變式
-│  ├─ application/              # UseCase，回傳 Result，僅依賴 domain 介面
-│  └─ shared/                   # 共用函式（結果型別、工具等）
+├─ core/                        # Application + Domain（DDD 核心）
+│  ├─ application/
+│  │  ├─ dto/                   # UseCase 輸出 DTO
+│  │  └─ useCases/              # Application Service（e.g. GetAveragePokemonStatsUseCase）
+│  └─ domain/
+│     ├─ entities/              # 聚合根與實體
+│     ├─ repositories/          # Domain Port（介面）
+│     ├─ services/              # Domain Service（純邏輯）
+│     ├─ specifications/        # 查詢條件 / 規範
+│     └─ valueObjects/          # 值物件（具不變式）
 │
 ├─ infra/                       # 基礎建設層，連結外部資源
-│  ├─ csv/                      # CSV 解析與資料轉換
-│  └─ pokemonCsvRepository.ts   # PokemonRepository 具體實作
+│  ├─ config/                   # 環境設定提供者
+│  └─ csv/                      # CSV Repository 與 Mapper
 │
 ├─ di/tokens.ts                 # tsyringe 依賴注入 Token 定義
+├─ server/container.ts          # 依賴註冊（Repository、UseCase）
+├─ server/factories.ts          # 建立 UseCase 等服務的工廠
+├─ server/useCases.ts           # 提供取得 UseCase 的封裝函式
 └─ tests/                       # Vitest 測試（domain / infra / integration）
 ```
 
 ## 架構與資料流
-- **app layer**：Next.js 介面層（Server Components、Route Handlers），僅透過 UseCase 存取商業邏輯。
-- **core layer**：`domain` 定義模型與介面，`application` 封裝 UseCase，`shared` 放置通用工具與 Result 型別。
-- **infra layer**：處理 CSV 存取與外部整合，提供 `PokemonRepository` 實作並注入容器。
-- **資料流**：UI / Routes → UseCase（core/application）→ Repository 介面（core/domain）→ CSV 實作（infra）→ DTO → UI render。
+- **App layer**：Next.js Server Component/Presenter 層，僅透過 UseCase 取得 DTO，再轉為 View Model 呈現。
+- **Application layer**：UseCase 僅依賴 Domain Port，協調流程並回傳 DTO。
+- **Domain layer**：實體、值物件、Domain Service 與 Repository Port，不引用任何外部技術。
+- **Infra layer**：實作 Domain Port（例如 CSV Repository），負責 Anti-Corruption 映射與環境設定。
+- **資料流**：UI / Routes → Presenter → UseCase（core/application）→ Repository Port（core/domain）→ CSV Adapter（infra）→ Domain 實體 → DTO → View Model → UI render。
 
 ## CSV 資料來源
 - 預設資料：`data/pokemonCsv.csv`
@@ -64,6 +79,6 @@ src
 - CI 建議串連 `yarn lint`、`yarn typecheck`、`yarn test` 以確保品質。
 
 ## 開發筆記
-- 專案使用 tsyringe 管理 DI，若新增 repository 或 infra 實作，記得同步更新組態（目前由 `src/server/pokemonRepository.ts` 統一生成單例）。
+- 專案使用 tsyringe 管理 DI，若新增 repository 或 UseCase，記得在 `src/server/container.ts` 註冊並同步更新 `TOKENS`。
 - D3 視覺化元件位於 `src/app/components/charts`；視覺元素與資料載入分離（`sections` vs `cards`）。
 - 新增 domain 邏輯時，務必針對 `tests/domain` 或 `tests/integration` 補齊測試以維持覆蓋率。

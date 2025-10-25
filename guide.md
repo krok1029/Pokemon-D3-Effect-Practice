@@ -12,39 +12,40 @@
 ## 2. 分層架構與職責
 專案採用三層設計以維持關注點分離：
 
-### 2.1 app 層（使用者介面）
+### 2.1 App 層（Presenter + UI）
 - 位置：`src/app`
-- 負責 Next.js Route Handlers、Server Components 與 UI 元件。
-- Server 功能僅調用 core/application 層 UseCase，不直接操作資料來源。
-- UI 元件依用途分為 `dashboard/sections`（資料載入）與 `dashboard/cards`（純呈現），D3 專用於 `components/charts`。
+- `app/(routes)/chart/` 等資料夾包含 Next.js Route（`page.tsx`）、Server Component（`ChartPage.tsx`）、Presenter（`presenter.ts`）與 View Model（`view-models/`）。
+- Presenter 專責呼叫 UseCase 並組裝 View Model；Server Component 僅消費 Presenter 輸出，不直接碰觸 Repository。
+- 共用 UI 元件與圖表仍集中於 `components/`，遵循「資料載入與呈現分離」原則。
 
-### 2.2 core 層（商業邏輯）
+### 2.2 Core 層（Application + Domain）
 - 位置：`src/core`
-- **domain**：定義實體、值物件、介面（例如 `PokemonRepository`）與不變式。
-- **application**：實作 UseCase（如 `ListPokemons`、`AverageStats`），僅依賴 domain 介面並回傳 `Result` 型別，以便標準化錯誤處理。
-- **shared**：提供共用 util（`result.ts`, `bool.ts` 等）。
+- **application**：`application/useCases/` 收納 UseCase（如 `GetAveragePokemonStatsUseCase`），回傳定義於 `application/dto/` 的 DTO，僅依賴 Domain Port。
+- **domain**：由 `entities/`、`valueObjects/`、`repositories/`（Port）、`services/`（Domain Service，例如 `StatsAverager`）、`specifications/` 組成，不得依賴 Infra/App。
+- Core 層是純 TypeScript 模組，可單獨被測試，亦能在未來替換資料來源或框架時重複使用。
 
-### 2.3 infra 層（基礎建設）
+### 2.3 Infra 層（基礎建設）
 - 位置：`src/infra`
-- 負責外部來源（目前是 CSV 檔案）的實作，例如 `pokemonCsvRepository.ts` 與 `csv/readCsv.ts`。
-- DI 組態由 `src/server/pokemonRepository.ts` 提供單例，並透過 tsyringe token 注入。
+- `csv/` 內提供 `CsvPokemonRepository` 與 `CsvPokemonMapper`，作為 Domain Port 的具體實作與 Anti-Corruption Layer。
+- `config/ConfigProvider.ts` 統一輸出環境設定（如 `POKEMON_DATA_PATH`），避免各層直接讀取 `process.env`。
+- 所有外部整合（API、DB、CSV）皆應在此層實作並於 `server/container.ts` 註冊。
 
 ## 3. 資料流與配置
-1. UI 或 API Route 呼叫 core/application 的 UseCase。
-2. UseCase 透過注入的 `PokemonRepository` 取得資料。
-3. Repository 讀取 CSV 並轉換為 domain 定義的資料結構（parse 於 `infra/csv`）。
-4. UseCase 回傳 `Result`，app 層依結果渲染 UI 或錯誤訊息。
+1. Next.js Route 的 Server Component 透過 Presenter 呼叫 UseCase。
+2. UseCase 透過 Domain Port (`PokemonRepository`) 取得資料，並使用 Domain Service (`StatsAverager`) 計算平均，最終回傳 DTO。
+3. Infra 層的 Repository 讀取 CSV（`readCsv`），經 `CsvPokemonMapper` 轉成 Domain 實體後回傳。
+4. Presenter 將 DTO 組裝成 View Model，再交由 Server Component / UI 元件渲染。
 
 ### 3.1 CSV 路徑
 - 預設使用 `data/pokemonCsv.csv`。
-- 測試環境會使用 `data/pokemon_fixture_30.csv`（於 `src/server/pokemonRepository.ts` 中設定）。
+- 測試環境會使用 `data/pokemon_fixture_30.csv`（由 `ConfigProvider` 提供）。
 - 若需改用其他 CSV，可設定環境變數 `POKEMON_DATA_PATH=/absolute/path/to/file.csv`。
 
 ## 4. 依賴注入與設定
-- DI token 定義於 `src/di/tokens.ts`。
-- `src/server/pokemonRepository.ts` 建立 repository 單例並註冊至 tsyringe 容器。
-- 單元測試或特殊情境可呼叫 `setPokemonRepository()` 以替換實作。
-- 若新增新的 repository 或 infra 實作，記得更新此設定檔以維持注入一致性。
+- DI token 定義於 `src/di/tokens.ts`，包含 Repository、UseCase、Domain Service、設定值等。
+- `src/server/container.ts` 撰寫組成根（Composition Root），註冊 `ConfigProvider`、`CsvPokemonRepository`、`StatsAverager` 與各 UseCase。
+- `src/server/useCases.ts`、`src/server/pokemonRepository.ts` 封裝 `container.resolve`，提供 App 層安全取得實例。
+- 新增 Repository / UseCase 時，請同步更新 `TOKENS` 與 container 註冊邏輯。
 
 ## 5. UI 與 D3 元件指南
 - 所有 UI 元件位於 `src/app/components`，依功能拆分：
@@ -72,8 +73,8 @@
 
 ## 8. 擴充範例
 ### 8.1 新增 UseCase
-1. 在 `src/core/application/...` 新增 UseCase，依需求調用 domain 介面並回傳 `Result`。
-2. 若需對 CSV 讀取做調整，擴充 `src/infra/pokemonCsvRepository.ts` 或新增新的 repository。
+1. 在 `src/core/application/useCases/` 新增 UseCase，依需求調用 Domain Port 並回傳 DTO。
+2. 若需對 CSV 讀取做調整，擴充 `src/infra/csv/CsvPokemonRepository.ts` 或新增新的 Adapter。
 3. 建立對應單元測試（application、domain），必要時補充整合測試。
 4. 在 app 層的 Server Component 中注入新的 UseCase 以呈現資料。
 
