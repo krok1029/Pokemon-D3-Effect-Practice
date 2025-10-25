@@ -12,11 +12,11 @@ export type AverageStatsViewModel = {
 
 const STAT_LABEL_MAP: Record<AverageStatsDto['stats'][number]['key'], string> = {
   hp: 'HP',
-  attack: 'Attack',
-  defense: 'Defense',
-  spAtk: 'Special Attack',
-  spDef: 'Special Defense',
-  speed: 'Speed',
+  attack: '物攻',
+  defense: '物防',
+  spAtk: '特攻',
+  spDef: '特防',
+  speed: '速度',
 };
 
 export function buildAverageStatsViewModel(dto: AverageStatsDto): AverageStatsViewModel {
