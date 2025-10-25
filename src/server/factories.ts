@@ -1,6 +1,6 @@
 import { GetAveragePokemonStatsUseCase } from '@/core/application/useCases/GetAveragePokemonStatsUseCase';
-import { PokemonRepository } from '@/core/domain/repositories/PokemonRepository';
-import { StatsAverager } from '@/core/domain/services/StatsAverager';
+import type { PokemonRepository } from '@/core/domain/repositories/PokemonRepository';
+import type { StatsAverager } from '@/core/domain/services/StatsAverager';
 
 export const factories = {
   createGetAveragePokemonStatsUseCase(
