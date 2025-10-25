@@ -68,6 +68,54 @@ src
 - **Infra layer**：實作 Domain Port（例如 CSV Repository），負責 Anti-Corruption 映射與環境設定。
 - **資料流**：UI / Routes → Presenter → UseCase（core/application）→ Repository Port（core/domain）→ CSV Adapter（infra）→ Domain 實體 → DTO → View Model → UI render。
 
+```mermaid
+flowchart TD
+  subgraph App[App 層 - Next.js]
+    Page[ChartPage<br/>Server Component]
+    Presenter[presenter.ts<br/>loadAverageStatsViewModel]
+    ViewModel[averageStatsViewModel.ts]
+  end
+
+  subgraph Server[Server 組態]
+    Container[container.ts]
+    Tokens[di/tokens.ts]
+    Factories[factories.ts]
+  end
+
+  subgraph Core[Core 層]
+    subgraph Application[Application]
+      UC[GetAveragePokemonStatsUseCase<br/>DTO]
+    end
+    subgraph Domain[Domain]
+      RepoPort[PokemonRepository<br/>Port]
+      Svc[StatsAverager<br/>Domain Service]
+      Entities[Pokemon<br/>BaseStats]
+      Spec[PokemonQuery]
+    end
+  end
+
+  subgraph Infra[Infra 層]
+    Config[ConfigProvider]
+    CsvRepo[CsvPokemonRepository]
+    Mapper[CsvPokemonMapper]
+    Data[(pokemonCsv.csv)]
+  end
+
+  Page --> Presenter --> UC
+  Presenter --> ViewModel
+  UC --> RepoPort
+  UC --> Svc
+  RepoPort --> CsvRepo
+  CsvRepo --> Mapper --> Data
+  Container --> Tokens
+  Container --> Factories
+  Container --> CsvRepo
+  Container --> UC
+  Container --> Svc
+  Container --> Config
+  Config -. 提供路徑 .-> CsvRepo
+```
+
 ## CSV 資料來源
 - 預設資料：`data/pokemonCsv.csv`
 - 測試情境使用：`data/pokemon_fixture_30.csv`
