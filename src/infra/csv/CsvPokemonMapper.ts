@@ -24,7 +24,7 @@ export class CsvPokemonMapper {
       spDef: CsvPokemonMapper.readInteger(row, STAT_COLUMN_MAP.spDef, index),
       speed: CsvPokemonMapper.readInteger(row, STAT_COLUMN_MAP.speed, index),
     });
-    const isLegendary = CsvPokemonMapper.readBoolean(row, 'Legendary');
+    const isLegendary = !!CsvPokemonMapper.readInteger(row, 'Legendary', index);
     return new Pokemon(id, name, stats, isLegendary);
   }
 

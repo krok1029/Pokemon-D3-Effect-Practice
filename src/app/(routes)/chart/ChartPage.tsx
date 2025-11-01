@@ -6,19 +6,28 @@ import {
   CardTitle,
 } from '@/app/components/ui/card';
 
+import { LegendaryToggle } from './components/LegendaryToggle';
 import { RadarChart } from './components/RadarChart';
 import { loadAverageStatsViewModel } from './presenter';
 
-export async function ChartPage() {
-  const averages = await loadAverageStatsViewModel();
+type ChartPageProps = {
+  excludeLegendaries?: boolean;
+};
+
+export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) {
+  const averages = await loadAverageStatsViewModel({ excludeLegendaries });
 
   return (
     <section className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">寶可夢能力平均值</h1>
-        <p className="text-muted-foreground text-sm">
-          目前共彙整 {averages.countLabel} 隻寶可夢，以下列表顯示六項基礎能力的平均值。
-        </p>
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">寶可夢能力平均值</h1>
+          <p className="text-muted-foreground text-sm">
+            目前共彙整 {averages.countLabel} 隻{excludeLegendaries ? '非傳說' : ''}
+            寶可夢，以下列表顯示六項基礎能力的平均值。
+          </p>
+        </div>
+        <LegendaryToggle excludeLegendaries={excludeLegendaries} />
       </header>
 
       <Card className="py-0">
