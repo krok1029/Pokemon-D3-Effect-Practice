@@ -10,7 +10,7 @@ export type AverageStatsViewModel = {
   stats: AverageStatViewModel[];
 };
 
-const STAT_LABEL_MAP: Record<AverageStatsDto['stats'][number]['key'], string> = {
+export const STAT_LABEL_MAP: Record<AverageStatsDto['stats'][number]['key'], string> = {
   hp: 'HP',
   attack: '物攻',
   defense: '物防',

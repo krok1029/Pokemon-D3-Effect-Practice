@@ -12,6 +12,11 @@ const STAT_COLUMN_MAP = {
   speed: 'Spe',
 } as const;
 
+const TYPE_COLUMN_MAP = {
+  primary: 'Type 1',
+  secondary: 'Type 2',
+} as const;
+
 export class CsvPokemonMapper {
   static toDomain(row: RawRow, index: number): Pokemon {
     const id = CsvPokemonMapper.readInteger(row, 'Number', index);
@@ -24,8 +29,10 @@ export class CsvPokemonMapper {
       spDef: CsvPokemonMapper.readInteger(row, STAT_COLUMN_MAP.spDef, index),
       speed: CsvPokemonMapper.readInteger(row, STAT_COLUMN_MAP.speed, index),
     });
-    const isLegendary = !!CsvPokemonMapper.readInteger(row, 'Legendary', index);
-    return new Pokemon(id, name, stats, isLegendary);
+    const isLegendary = CsvPokemonMapper.readBoolean(row, 'Legendary');
+    const primaryType = CsvPokemonMapper.readString(row, TYPE_COLUMN_MAP.primary, index);
+    const secondaryType = CsvPokemonMapper.readOptionalString(row, TYPE_COLUMN_MAP.secondary);
+    return new Pokemon(id, name, stats, isLegendary, primaryType, secondaryType);
   }
 
   private static readInteger(row: RawRow, column: string, index: number): number {
@@ -53,15 +60,37 @@ export class CsvPokemonMapper {
     throw new Error(`Row ${index + 1}: column "${column}" must be a non-empty string`);
   }
 
+  private static readOptionalString(row: RawRow, column: string): string | null {
+    const value = row[column];
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed.length > 0 && trimmed.toLowerCase() !== 'none') {
+        return trimmed;
+      }
+    }
+    return null;
+  }
+
   private static readBoolean(row: RawRow, column: string): boolean {
     const value = row[column];
     if (typeof value === 'boolean') {
       return value;
     }
+    if (typeof value === 'number') {
+      return value !== 0;
+    }
     if (typeof value === 'string') {
       const normalized = value.trim().toLowerCase();
-      if (normalized === 'true') return true;
-      if (normalized === 'false') return false;
+      if (normalized === 'true' || normalized === '1' || normalized === '1.0') {
+        return true;
+      }
+      if (normalized === 'false' || normalized === '0' || normalized === '0.0') {
+        return false;
+      }
+      const numeric = Number.parseFloat(normalized);
+      if (!Number.isNaN(numeric)) {
+        return numeric !== 0;
+      }
     }
     return false;
   }

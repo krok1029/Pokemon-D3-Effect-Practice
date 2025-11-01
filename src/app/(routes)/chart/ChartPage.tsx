@@ -8,14 +8,18 @@ import {
 
 import { LegendaryToggle } from './components/LegendaryToggle';
 import { RadarChart } from './components/RadarChart';
-import { loadAverageStatsViewModel } from './presenter';
+import { TypeAverageStatsComparison } from './components/TypeAverageStatsComparison';
+import { loadAverageStatsViewModel, loadTypeAverageStatsViewModel } from './presenter';
 
 type ChartPageProps = {
   excludeLegendaries?: boolean;
 };
 
 export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) {
-  const averages = await loadAverageStatsViewModel({ excludeLegendaries });
+  const [averages, typeAverages] = await Promise.all([
+    loadAverageStatsViewModel({ excludeLegendaries }),
+    loadTypeAverageStatsViewModel({ excludeLegendaries }),
+  ]);
 
   return (
     <section className="space-y-8">
@@ -52,6 +56,18 @@ export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) 
           </Card>
         ))}
       </dl>
+
+      <Card className="py-0">
+        <CardHeader className="gap-2 px-6 pt-6">
+          <CardTitle className="text-xl">依屬性比較能力平均值</CardTitle>
+          <CardDescription>
+            各屬性依選擇的能力值排序，橫條越長代表平均值越高。切換「排除傳說寶可夢」會更新結果。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pb-6">
+          <TypeAverageStatsComparison viewModel={typeAverages} />
+        </CardContent>
+      </Card>
     </section>
   );
 }

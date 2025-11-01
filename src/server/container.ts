@@ -4,6 +4,7 @@ import { container } from 'tsyringe';
 
 import { TOKENS } from '@/di/tokens';
 
+import { GetAveragePokemonStatsByTypeUseCase } from '@/core/application/useCases/GetAveragePokemonStatsByTypeUseCase';
 import { GetAveragePokemonStatsUseCase } from '@/core/application/useCases/GetAveragePokemonStatsUseCase';
 import type { PokemonRepository } from '@/core/domain/repositories/PokemonRepository';
 import { StatsAverager } from '@/core/domain/services/StatsAverager';
@@ -30,5 +31,16 @@ container.register<GetAveragePokemonStatsUseCase>(TOKENS.GetAveragePokemonStatsU
       c.resolve(TOKENS.StatsAverager),
     ),
 });
+
+container.register<GetAveragePokemonStatsByTypeUseCase>(
+  TOKENS.GetAveragePokemonStatsByTypeUseCase,
+  {
+    useFactory: (c) =>
+      factories.createGetAveragePokemonStatsByTypeUseCase(
+        c.resolve(TOKENS.PokemonRepository),
+        c.resolve(TOKENS.StatsAverager),
+      ),
+  },
+);
 
 export { container };
