@@ -1,7 +1,15 @@
 'use client';
 
 import * as d3 from 'd3';
+import Image from 'next/image';
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/app/components/ui/tooltip';
 
 import type { AverageStatKey } from '@/core/application/dto/AverageStatsDto';
 
@@ -14,6 +22,7 @@ type TypeAverageStatsComparisonProps = {
 type ChartEntry = {
   type: string;
   iconPath: string;
+  typeLabel: string;
   value: number;
   valueLabel: string;
   countLabel: string;
@@ -46,15 +55,6 @@ export function TypeAverageStatsComparison({ viewModel }: TypeAverageStatsCompar
     }
   }, [hasOptions, selectedStatKey, viewModel.statOptions]);
 
-  if (!hasOptions) {
-    return (
-      <p className="text-sm text-muted-foreground">目前沒有符合條件的屬性資料可供比較。</p>
-    );
-  }
-
-  const currentStat = viewModel.statOptions.find((option) => option.key === selectedStatKey);
-  const currentStatLabel = currentStat?.label ?? '';
-
   const chartEntries = useMemo<ChartEntry[]>(() => {
     return viewModel.types
       .map<ChartEntry | null>((typeEntry) => {
@@ -65,6 +65,7 @@ export function TypeAverageStatsComparison({ viewModel }: TypeAverageStatsCompar
         return {
           type: typeEntry.type,
           iconPath: typeEntry.iconPath,
+          typeLabel: typeEntry.typeLabel,
           value: stat.value,
           valueLabel: stat.valueLabel,
           countLabel: typeEntry.countLabel,
@@ -74,48 +75,93 @@ export function TypeAverageStatsComparison({ viewModel }: TypeAverageStatsCompar
       .sort((a, b) => b.value - a.value);
   }, [selectedStatKey, viewModel.types]);
 
+  if (!hasOptions) {
+    return <p className="text-muted-foreground text-sm">目前沒有符合條件的屬性資料可供比較。</p>;
+  }
+
+  const currentStat = viewModel.statOptions.find((option) => option.key === selectedStatKey);
+  const currentStatLabel = currentStat?.label ?? '';
+
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setSelectedStatKey(event.target.value as AverageStatKey);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground">比較能力</p>
-          <p className="text-xs text-muted-foreground">
-            依照選擇的能力值，由高至低排列各屬性的平均表現。
-          </p>
+    <TooltipProvider delayDuration={0}>
+      <div className="space-y-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-foreground text-sm font-medium">比較能力</p>
+            <p className="text-muted-foreground text-xs">
+              依照選擇的能力值，由高至低排列各屬性的平均表現。
+            </p>
+          </div>
+          <select
+            className="border-border bg-background text-foreground focus-visible:outline-primary w-full rounded-md border px-3 py-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-offset-2 sm:w-56"
+            value={selectedStatKey}
+            onChange={handleSelectChange}
+          >
+            {viewModel.statOptions.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:w-56"
-          value={selectedStatKey}
-          onChange={handleSelectChange}
-        >
-          {viewModel.statOptions.map((option) => (
-            <option key={option.key} value={option.key}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
 
-      {chartEntries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">目前沒有符合條件的資料。</p>
-      ) : (
-        <div className="space-y-2">
-          <TypeAverageStatsBarChart data={chartEntries} statLabel={currentStatLabel} />
-          <p className="text-xs text-muted-foreground">
-            每根直條代表該屬性在 {currentStatLabel} 的平均值，括號中顯示參與計算的寶可夢數量。
-          </p>
-        </div>
-      )}
-    </div>
+        {chartEntries.length === 0 ? (
+          <p className="text-muted-foreground text-sm">目前沒有符合條件的資料。</p>
+        ) : (
+          <div className="space-y-2">
+            <TypeAverageStatsBarChart data={chartEntries} statLabel={currentStatLabel} />
+            <p className="text-muted-foreground text-xs">
+              每根直條代表該屬性在 {currentStatLabel} 的平均值，括號中顯示參與計算的寶可夢數量。
+            </p>
+          </div>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }
 
 function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+
+  const layout = useMemo(() => {
+    const width = Math.max(DEFAULT_WIDTH, data.length * MIN_BAR_WIDTH + MARGIN.left + MARGIN.right);
+    const height = DEFAULT_HEIGHT;
+    const innerWidth = width - MARGIN.left - MARGIN.right;
+    const innerHeight = height - MARGIN.top - MARGIN.bottom;
+
+    const maxValue = d3.max(data, (entry) => entry.value) ?? 0;
+
+    const yScale = d3
+      .scaleLinear()
+      .domain([0, maxValue || 1])
+      .nice()
+      .range([innerHeight, 0]);
+
+    const xScale = d3
+      .scaleBand<string>()
+      .domain(data.map((entry) => entry.type))
+      .range([0, innerWidth])
+      .padding(0.25);
+
+    const iconCenters = data.map((entry) => {
+      const band = xScale(entry.type) ?? 0;
+      return MARGIN.left + band + xScale.bandwidth() / 2;
+    });
+
+    return {
+      width,
+      height,
+      innerWidth,
+      innerHeight,
+      xScale,
+      yScale,
+      iconCenters,
+    };
+  }, [data]);
 
   useEffect(() => {
     const svgElement = svgRef.current;
@@ -142,27 +188,7 @@ function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartP
     const mutedColor = parseColor('--muted-foreground', '#6b7280')!;
     const foregroundColor = parseColor('--foreground', '#0f172a')!;
 
-    const width = Math.max(
-      DEFAULT_WIDTH,
-      data.length * MIN_BAR_WIDTH + MARGIN.left + MARGIN.right,
-    );
-    const height = DEFAULT_HEIGHT;
-    const innerWidth = width - MARGIN.left - MARGIN.right;
-    const innerHeight = height - MARGIN.top - MARGIN.bottom;
-
-    const maxValue = d3.max(data, (entry) => entry.value) ?? 0;
-
-    const yScale = d3
-      .scaleLinear()
-      .domain([0, maxValue || 1])
-      .nice()
-      .range([innerHeight, 0]);
-
-    const xScale = d3
-      .scaleBand<string>()
-      .domain(data.map((entry) => entry.type))
-      .range([0, innerWidth])
-      .padding(0.25);
+    const { width, height, innerWidth, innerHeight, xScale, yScale } = layout;
 
     const svg = root
       .attr('viewBox', `0 0 ${width} ${height}`)
@@ -170,7 +196,9 @@ function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartP
       .attr('role', 'img')
       .attr('aria-label', `${statLabel} 平均值直條圖`);
 
-    const chartGroup = svg.append('g').attr('transform', `translate(${MARGIN.left}, ${MARGIN.top})`);
+    const chartGroup = svg
+      .append('g')
+      .attr('transform', `translate(${MARGIN.left}, ${MARGIN.top})`);
 
     const gridLines = chartGroup.append('g').attr('class', 'grid');
 
@@ -186,10 +214,7 @@ function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartP
       .attr('stroke-width', 0.5)
       .attr('stroke-dasharray', '4 4');
 
-    const yAxis = d3
-      .axisLeft(yScale)
-      .ticks(5)
-      .tickSizeOuter(0);
+    const yAxis = d3.axisLeft(yScale).ticks(5).tickSizeOuter(0);
     const yAxisGroup = chartGroup.append('g').attr('class', 'y-axis').call(yAxis);
     yAxisGroup.selectAll('text').attr('fill', mutedColor.formatRgb()).attr('font-size', 12);
     yAxisGroup.selectAll('path').attr('stroke', borderColor.formatRgb()).attr('stroke-width', 0.5);
@@ -228,66 +253,62 @@ function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartP
       .attr('dominant-baseline', 'auto')
       .text((entry) => entry.valueLabel);
 
-    const xAxisGroup = chartGroup
-      .append('g')
-      .attr('class', 'type-axis')
-      .attr('transform', `translate(0, ${innerHeight})`);
-
-    const tickGroups = xAxisGroup
-      .selectAll('g')
-      .data(data)
-      .join('g')
-      .attr(
-        'transform',
-        (entry) => `translate(${(xScale(entry.type) ?? 0) + xScale.bandwidth() / 2}, 0)`,
-      );
-
-    const ICON_SIZE = 36;
-
-    tickGroups
-      .append('image')
-      .attr('href', (entry) => entry.iconPath)
-      .attr('width', ICON_SIZE)
-      .attr('height', ICON_SIZE)
-      .attr('x', -ICON_SIZE / 2)
-      .attr('y', 16)
-      .attr('preserveAspectRatio', 'xMidYMid meet');
-
-    tickGroups
-      .append('text')
-      .attr('y', 16 + ICON_SIZE + 14)
-      .attr('text-anchor', 'middle')
-      .attr('fill', foregroundColor.formatRgb())
-      .attr('font-size', 12)
-      .attr('font-weight', 500)
-      .text((entry) => entry.type);
-
-    tickGroups
-      .append('text')
-      .attr('y', 16 + ICON_SIZE + 32)
-      .attr('text-anchor', 'middle')
-      .attr('fill', mutedColor.formatRgb())
-      .attr('font-size', 11)
-      .text((entry) => `樣本：${entry.countLabel}`);
+    chartGroup
+      .append('line')
+      .attr('x1', 0)
+      .attr('x2', innerWidth)
+      .attr('y1', innerHeight)
+      .attr('y2', innerHeight)
+      .attr('stroke', borderColor.copy({ opacity: 0.5 }).formatRgb())
+      .attr('stroke-width', 1);
 
     return () => {
       root.selectAll('*').remove();
     };
-  }, [data, statLabel]);
-
-  const dynamicWidth = Math.max(
-    DEFAULT_WIDTH,
-    data.length * MIN_BAR_WIDTH + MARGIN.left + MARGIN.right,
-  );
-  const dynamicHeight = DEFAULT_HEIGHT;
+  }, [data, layout, statLabel]);
 
   return (
     <div className="relative w-full overflow-auto">
       <svg
         ref={svgRef}
         className="h-full"
-        style={{ minWidth: `${dynamicWidth}px`, height: dynamicHeight }}
+        style={{ minWidth: `${layout.width}px`, height: layout.height }}
       />
+      <div
+        className="pointer-events-none absolute top-0 left-0 h-full w-full"
+        style={{ minWidth: `${layout.width}px`, height: layout.height }}
+      >
+        {data.map((entry, index) => (
+          <div
+            key={entry.type}
+            className="pointer-events-auto absolute flex translate-x-[-50%] flex-col items-center gap-2"
+            style={{
+              left: `${layout.iconCenters[index] ?? 0}px`,
+              bottom: `${MARGIN.bottom / 2}px`,
+            }}
+          >
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <div className="border-border bg-card flex h-12 w-12 items-center justify-center rounded-full border shadow">
+                  <Image
+                    src={entry.iconPath}
+                    alt={`${entry.typeLabel}屬性圖示`}
+                    width={36}
+                    height={36}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top">{entry.typeLabel}屬性</TooltipContent>
+            </Tooltip>
+            <span className="text-foreground text-center text-sm font-medium">
+              {entry.typeLabel}
+            </span>
+            <span className="text-muted-foreground text-center text-xs">
+              樣本：{entry.countLabel}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

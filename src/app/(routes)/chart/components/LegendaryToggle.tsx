@@ -45,7 +45,7 @@ export function LegendaryToggle({ excludeLegendaries, className }: LegendaryTogg
       <span className="inline-flex items-center gap-2">
         <input
           type="checkbox"
-          className="border-border text-primary focus-visible:outline-primary h-4 w-4 rounded border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="border-border text-primary focus-visible:outline-primary h-4 w-4 rounded border focus-visible:outline focus-visible:outline-offset-2"
           checked={excludeLegendaries}
           onChange={handleChange}
           disabled={isPending}
