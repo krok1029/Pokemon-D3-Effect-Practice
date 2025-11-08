@@ -10,6 +10,7 @@ import {
   PokemonStatsMatrixViewModel,
 } from '../view-models/pokemonStatsMatrixViewModel';
 import { translateType } from '../view-models/typeAverageStatsViewModel';
+import Image from 'next/image';
 
 type StatScatterMatrixProps = {
   viewModel: PokemonStatsMatrixViewModel;
@@ -20,9 +21,25 @@ const PLOT_HEIGHT = 520;
 const PLOT_MARGIN = { top: 32, right: 24, bottom: 60, left: 60 };
 
 const sanitizePokemonName = (name: string) => name.trim().toLowerCase().replace(/\s+/g, '_');
-const buildPokemonSelectionKey = (
-  pokemon: Pick<PokemonScatterPointViewModel, 'id' | 'name'>,
-) => `${pokemon.id}-${sanitizePokemonName(pokemon.name)}`;
+const buildPokemonSelectionKey = (pokemon: Pick<PokemonScatterPointViewModel, 'id' | 'name'>) =>
+  `${pokemon.id}-${sanitizePokemonName(pokemon.name)}`;
+const withAlphaColor = (color: string, alpha: number) => {
+  const match = color.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!match) {
+    return color;
+  }
+  let hex = match[1];
+  if (hex.length === 3) {
+    hex = hex
+      .split('')
+      .map((char) => char + char)
+      .join('');
+  }
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 
 export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
   const statKeys = useMemo(
@@ -35,6 +52,23 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
     [viewModel.statOptions],
   );
 
+  const typeOptions = useMemo(() => {
+    const typeMap = new Map<string, TypeLegendOption>();
+    viewModel.pokemons.forEach((pokemon) => {
+      if (!typeMap.has(pokemon.typeSlug)) {
+        typeMap.set(pokemon.typeSlug, {
+          slug: pokemon.typeSlug,
+          label: pokemon.typeLabel,
+          color: pokemon.color,
+          iconPath: pokemon.iconPath,
+        });
+      }
+    });
+    return Array.from(typeMap.values()).sort((a, b) => a.label.localeCompare(b.label, 'zh-Hant'));
+  }, [viewModel.pokemons]);
+
+  const allTypeSlugs = useMemo(() => typeOptions.map((option) => option.slug), [typeOptions]);
+
   const defaultXKey = statKeys[1] ?? statKeys[0] ?? 'hp';
   const defaultYKey = statKeys[0] ?? 'hp';
 
@@ -43,6 +77,51 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
     defaultXKey === defaultYKey ? (statKeys[2] ?? defaultYKey) : defaultYKey,
   );
   const [selectedPokemonKeys, setSelectedPokemonKeys] = useState<string[]>([]);
+  const [visibleTypeSlugs, setVisibleTypeSlugs] = useState<string[]>(allTypeSlugs);
+
+  useEffect(() => {
+    setVisibleTypeSlugs(allTypeSlugs);
+  }, [allTypeSlugs]);
+
+  const visibleTypeSlugSet = useMemo(() => new Set(visibleTypeSlugs), [visibleTypeSlugs]);
+
+  const filteredPokemons = useMemo(
+    () => viewModel.pokemons.filter((pokemon) => visibleTypeSlugSet.has(pokemon.typeSlug)),
+    [viewModel.pokemons, visibleTypeSlugSet],
+  );
+
+  const pokemonByKey = useMemo(
+    () =>
+      new Map(viewModel.pokemons.map((pokemon) => [buildPokemonSelectionKey(pokemon), pokemon])),
+    [viewModel.pokemons],
+  );
+
+  useEffect(() => {
+    setSelectedPokemonKeys((prev) => {
+      if (prev.length === 0) {
+        return prev;
+      }
+      const next = prev.filter((key) => {
+        const pokemon = pokemonByKey.get(key);
+        return pokemon && visibleTypeSlugSet.has(pokemon.typeSlug);
+      });
+      return next.length === prev.length ? prev : next;
+    });
+  }, [pokemonByKey, visibleTypeSlugSet]);
+
+  const handleTypeToggle = useCallback((slug: string) => {
+    setVisibleTypeSlugs((prev) => {
+      const hasSlug = prev.includes(slug);
+      if (hasSlug) {
+        return prev.filter((item) => item !== slug);
+      }
+      return [...prev, slug];
+    });
+  }, []);
+
+  const handleTypeReset = useCallback(() => {
+    setVisibleTypeSlugs(allTypeSlugs);
+  }, [allTypeSlugs]);
 
   useEffect(() => {
     const nextX = statKeys[1] ?? statKeys[0] ?? 'hp';
@@ -179,7 +258,7 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
       .append('g')
       .attr('class', 'dots')
       .selectAll('circle.dot')
-      .data(viewModel.pokemons)
+      .data(filteredPokemons)
       .join('circle')
       .attr(
         'class',
@@ -245,7 +324,7 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
           layout.yScale.invert(clampedY[0]),
           layout.yScale.invert(clampedY[1]),
         );
-        const ids = viewModel.pokemons
+        const ids = filteredPokemons
           .filter((pokemon) => {
             const xValue = pokemon.stats[xKey];
             const yValue = pokemon.stats[yKey];
@@ -259,12 +338,7 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
       });
 
     plot.append('g').attr('class', 'brush').call(brush);
-  }, [layout, selectedPokemonKeys, statLabelByKey, viewModel.pokemons, xKey, yKey]);
-
-  const pokemonByKey = useMemo(
-    () => new Map(viewModel.pokemons.map((pokemon) => [buildPokemonSelectionKey(pokemon), pokemon])),
-    [viewModel.pokemons],
-  );
+  }, [filteredPokemons, layout, selectedPokemonKeys, statLabelByKey, xKey, yKey]);
 
   const selectedPokemons = useMemo(() => {
     if (selectedPokemonKeys.length === 0) {
@@ -292,6 +366,13 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
             onChange={handleYKeyChange}
           />
         </div>
+
+        <TypeLegend
+          options={typeOptions}
+          activeSlugs={visibleTypeSlugs}
+          onToggle={handleTypeToggle}
+          onReset={handleTypeReset}
+        />
 
         <div className="border-border bg-background overflow-auto rounded-lg border p-4 shadow-sm">
           <svg ref={svgRef} className="max-h-[600px] min-w-full" />
@@ -333,6 +414,77 @@ function AxisSelector({ label, value, options, onChange }: AxisSelectorProps) {
         ))}
       </select>
     </label>
+  );
+}
+
+type TypeLegendOption = {
+  slug: string;
+  label: string;
+  color: string;
+  iconPath: string;
+};
+
+type TypeLegendProps = {
+  options: TypeLegendOption[];
+  activeSlugs: string[];
+  onToggle: (slug: string) => void;
+  onReset: () => void;
+};
+
+function TypeLegend({ options, activeSlugs, onToggle, onReset }: TypeLegendProps) {
+  if (options.length === 0) {
+    return null;
+  }
+
+  const isAllActive = activeSlugs.length === options.length;
+
+  return (
+    <section className="border-border bg-muted/20 rounded-lg border p-3 shadow-sm">
+      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
+        <span>屬性篩選</span>
+        <button
+          type="button"
+          className="text-primary disabled:text-muted-foreground"
+          onClick={onReset}
+          disabled={isAllActive}
+        >
+          重設
+        </button>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {options.map((option) => {
+          const isActive = activeSlugs.includes(option.slug);
+          const buttonStyle = {
+            color: isActive ? withAlphaColor(option.color, 0.8) : '#aaaaaa',
+            // backgroundColor: isActive ? withAlphaColor(option.color, 0.18) : 'transparent',
+          };
+          return (
+            <button
+              key={option.slug}
+              type="button"
+              className={`flex items-center gap-2 px-1 py-1 text-xs font-medium transition ${
+                isActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100'
+              }`}
+              style={buttonStyle}
+              aria-pressed={isActive}
+              onClick={() => onToggle(option.slug)}
+            >
+              <Image
+                src={option.iconPath}
+                alt={option.label}
+                title={option.label}
+                className="h-4 w-4"
+                width={16}
+                height={16}
+                style={{ filter: isActive ? 'none' : 'grayscale(1)', opacity: isActive ? 1 : 0.7 }}
+                aria-hidden="true"
+              />
+
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
