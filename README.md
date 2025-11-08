@@ -122,7 +122,7 @@ flowchart TD
 - 自訂資料：設定環境變數 `POKEMON_DATA_PATH=/abs/path/to/your.csv`，系統會在啟動時載入指定檔案。
 
 ## 測試與品質保證
-- Vitest 用於單元與整合測試，可於 `tests/` 找到對應案例。
+- Vitest 用於單元與整合測試，可於 `tests/domain`、`tests/application`、`tests/infra` 與 `tests/integration` 找到對應案例，方便追蹤各層責任。
 - Playwright 覆蓋端到端流程，建議在本機執行前安裝瀏覽器相依（`npx playwright install`）。
 - CI 建議串連 `yarn lint`、`yarn typecheck`、`yarn test` 以確保品質。
 
