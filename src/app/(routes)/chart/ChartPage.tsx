@@ -8,17 +8,23 @@ import {
 
 import { LegendaryToggle } from './components/LegendaryToggle';
 import { RadarChart } from './components/RadarChart';
+import { StatScatterMatrix } from './components/StatScatterMatrix';
 import { TypeAverageStatsComparison } from './components/TypeAverageStatsComparison';
-import { loadAverageStatsViewModel, loadTypeAverageStatsViewModel } from './presenter';
+import {
+  loadAverageStatsViewModel,
+  loadPokemonStatsMatrixViewModel,
+  loadTypeAverageStatsViewModel,
+} from './presenter';
 
 type ChartPageProps = {
   excludeLegendaries?: boolean;
 };
 
 export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) {
-  const [averages, typeAverages] = await Promise.all([
+  const [averages, typeAverages, statsMatrix] = await Promise.all([
     loadAverageStatsViewModel({ excludeLegendaries }),
     loadTypeAverageStatsViewModel({ excludeLegendaries }),
+    loadPokemonStatsMatrixViewModel({ excludeLegendaries }),
   ]);
 
   return (
@@ -66,6 +72,18 @@ export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) 
         </CardHeader>
         <CardContent className="pb-6">
           <TypeAverageStatsComparison viewModel={typeAverages} />
+        </CardContent>
+      </Card>
+
+      <Card className="py-0">
+        <CardHeader className="gap-2 px-6 pt-6">
+          <CardTitle className="text-xl">能力散佈圖</CardTitle>
+          <CardDescription>
+            從下方選擇兩項能力，觀察寶可夢在該組合下的分布；拖曳散佈圖即可框選並檢視詳細資料。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pb-6">
+          <StatScatterMatrix viewModel={statsMatrix} />
         </CardContent>
       </Card>
     </section>

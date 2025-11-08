@@ -64,19 +64,19 @@ export function buildTypeAverageStatsViewModel(
   };
 }
 
-function normalizeTypeSlug(type: string): string {
+export function normalizeTypeSlug(type: string): string {
   return type
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-');
 }
 
-function buildTypeIconPath(type: string): string {
+export function buildTypeIconPath(type: string): string {
   const slug = normalizeTypeSlug(type);
   return `/types/${slug}.svg`;
 }
 
-const TYPE_LABEL_MAP: Record<string, string> = {
+export const TYPE_LABEL_MAP: Record<string, string> = {
   bug: '蟲',
   dark: '惡',
   dragon: '龍',
@@ -97,7 +97,28 @@ const TYPE_LABEL_MAP: Record<string, string> = {
   water: '水',
 };
 
-function translateType(type: string): string {
+export const TYPE_COLOR_MAP: Record<string, string> = {
+  bug: '#92BC2C',
+  dark: '#595761',
+  dragon: '#0C69C8',
+  electric: '#F2D94E',
+  fairy: '#EE90E6',
+  fighting: '#D3425F',
+  fire: '#FBA54C',
+  flying: '#A1BBEC',
+  ghost: '#5F6DBC',
+  grass: '#5FBD58',
+  ground: '#DA7C4D',
+  ice: '#75D0C1',
+  normal: '#A0A29F',
+  poison: '#B763CF',
+  psychic: '#FA8581',
+  rock: '#C9BB8A',
+  steel: '#5695A3',
+  water: '#539DDF',
+};
+
+export function translateType(type: string): string {
   const slug = normalizeTypeSlug(type);
   return TYPE_LABEL_MAP[slug] ?? type;
 }

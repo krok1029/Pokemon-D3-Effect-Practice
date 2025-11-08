@@ -1,12 +1,17 @@
 import {
   getAveragePokemonStatsUseCase,
   getAveragePokemonStatsByTypeUseCase,
+  getPokemonBaseStatsUseCase,
 } from '@/server/useCases';
 
 import {
   buildAverageStatsViewModel,
   AverageStatsViewModel,
 } from './view-models/averageStatsViewModel';
+import {
+  buildPokemonStatsMatrixViewModel,
+  PokemonStatsMatrixViewModel,
+} from './view-models/pokemonStatsMatrixViewModel';
 import {
   buildTypeAverageStatsViewModel,
   TypeAverageStatsViewModel,
@@ -34,4 +39,14 @@ export async function loadTypeAverageStatsViewModel(
     excludeLegendaries: options.excludeLegendaries,
   });
   return buildTypeAverageStatsViewModel(dto);
+}
+
+export async function loadPokemonStatsMatrixViewModel(
+  options: LoadAverageStatsOptions = {},
+): Promise<PokemonStatsMatrixViewModel> {
+  const useCase = getPokemonBaseStatsUseCase();
+  const dto = await useCase.execute({
+    excludeLegendaries: options.excludeLegendaries,
+  });
+  return buildPokemonStatsMatrixViewModel(dto);
 }

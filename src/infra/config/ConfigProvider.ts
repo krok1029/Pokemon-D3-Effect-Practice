@@ -4,6 +4,7 @@ export interface PokemonDataConfig {
 
 export class ConfigProvider {
   static getPokemonDataConfig(): PokemonDataConfig {
+    // return { pokemonCsvPath: 'data/pokemon_fixture_30.csv' };
     if (process.env.POKEMON_DATA_PATH) {
       return { pokemonCsvPath: process.env.POKEMON_DATA_PATH };
     }
