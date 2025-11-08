@@ -1,6 +1,7 @@
 'use client';
 
 import * as d3 from 'd3';
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { AverageStatKey } from '@/core/application/dto/AverageStatsDto';
@@ -10,7 +11,6 @@ import {
   PokemonStatsMatrixViewModel,
 } from '../view-models/pokemonStatsMatrixViewModel';
 import { translateType } from '../view-models/typeAverageStatsViewModel';
-import Image from 'next/image';
 
 type StatScatterMatrixProps = {
   viewModel: PokemonStatsMatrixViewModel;
@@ -160,7 +160,16 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
     [statKeys, xKey],
   );
 
+  useEffect(() => {
+    zoomTransformRef.current = d3.zoomIdentity;
+  }, [xKey, yKey]);
+
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const svgSelectionRef = useRef<d3.Selection<SVGSVGElement, unknown, null, undefined> | null>(
+    null,
+  );
+  const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const zoomTransformRef = useRef<d3.ZoomTransform>(d3.zoomIdentity);
 
   const layout = useMemo(() => {
     const innerWidth = PLOT_WIDTH - PLOT_MARGIN.left - PLOT_MARGIN.right;
@@ -194,44 +203,63 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
     };
   }, [viewModel.pokemons, xKey, yKey]);
 
+  const activeScalesRef = useRef<{
+    x: d3.ScaleLinear<number, number>;
+    y: d3.ScaleLinear<number, number>;
+  }>({
+    x: layout.xScale,
+    y: layout.yScale,
+  });
+
+  useEffect(() => {
+    activeScalesRef.current = {
+      x: layout.xScale,
+      y: layout.yScale,
+    };
+  }, [layout]);
+
+  const handleZoomBy = useCallback((scaleFactor: number) => {
+    const svgSelection = svgSelectionRef.current;
+    const zoomBehavior = zoomBehaviorRef.current;
+    if (!svgSelection || !zoomBehavior) {
+      return;
+    }
+
+    svgSelection.transition().duration(200).call(zoomBehavior.scaleBy, scaleFactor);
+  }, []);
+
+  const handleZoomInClick = useCallback(() => {
+    handleZoomBy(1.2);
+  }, [handleZoomBy]);
+
+  const handleZoomOutClick = useCallback(() => {
+    handleZoomBy(0.8);
+  }, [handleZoomBy]);
+
   useEffect(() => {
     const svgElement = svgRef.current;
     if (!svgElement) {
       return;
     }
 
-    const selectedSet = new Set(selectedPokemonKeys);
-
     const root = d3.select(svgElement);
+    svgSelectionRef.current = root;
     root.selectAll('*').remove();
-
     root.attr('viewBox', `0 0 ${layout.width} ${layout.height}`).attr('width', '100%');
+    root.on('.zoom', null);
 
     const plot = root
       .append('g')
       .attr('transform', `translate(${PLOT_MARGIN.left}, ${PLOT_MARGIN.top})`);
 
-    const xAxis = d3.axisBottom(layout.xScale).ticks(6).tickSize(-layout.innerHeight);
-    const yAxis = d3.axisLeft(layout.yScale).ticks(6).tickSize(-layout.innerWidth);
+    const applyAxisStyles = (selection: d3.Selection<SVGGElement, unknown, null, undefined>) => {
+      selection.selectAll('line').attr('stroke', 'var(--border)').attr('stroke-opacity', 0.4);
+      selection.selectAll('path').attr('stroke', 'var(--border)');
+      selection.selectAll('text').attr('fill', 'var(--muted-foreground)').attr('font-size', 12);
+    };
 
-    plot
-      .append('g')
-      .attr('transform', `translate(0, ${layout.innerHeight})`)
-      .call(xAxis)
-      .call((selection) => {
-        selection.selectAll('line').attr('stroke', 'var(--border)').attr('stroke-opacity', 0.4);
-        selection.selectAll('path').attr('stroke', 'var(--border)');
-        selection.selectAll('text').attr('fill', 'var(--muted-foreground)').attr('font-size', 12);
-      });
-
-    plot
-      .append('g')
-      .call(yAxis)
-      .call((selection) => {
-        selection.selectAll('line').attr('stroke', 'var(--border)').attr('stroke-opacity', 0.4);
-        selection.selectAll('path').attr('stroke', 'var(--border)');
-        selection.selectAll('text').attr('fill', 'var(--muted-foreground)').attr('font-size', 12);
-      });
+    const xAxisGroup = plot.append('g').attr('transform', `translate(0, ${layout.innerHeight})`);
+    const yAxisGroup = plot.append('g');
 
     plot
       .append('text')
@@ -254,9 +282,9 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
       .attr('font-weight', 600)
       .text(statLabelByKey.get(yKey) ?? yKey.toUpperCase());
 
-    plot
-      .append('g')
-      .attr('class', 'dots')
+    const selectedSet = new Set(selectedPokemonKeys);
+    const dotsGroup = plot.append('g').attr('class', 'dots');
+    const dots = dotsGroup
       .selectAll('circle.dot')
       .data(filteredPokemons)
       .join('circle')
@@ -265,8 +293,6 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
         (pokemon) =>
           `dot ${pokemon.id}_pokemon_name_${pokemon.name.split(' ').join('_').toLowerCase()}`,
       )
-      .attr('cx', (pokemon) => layout.xScale(pokemon.stats[xKey]))
-      .attr('cy', (pokemon) => layout.yScale(pokemon.stats[yKey]))
       .attr('r', 4)
       .attr('fill', (pokemon) => pokemon.color)
       .attr('fill-opacity', (pokemon) =>
@@ -281,63 +307,143 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
       )
       .attr('stroke-width', (pokemon) =>
         selectedSet.has(buildPokemonSelectionKey(pokemon)) ? 1.4 : 0,
-      )
+      );
+
+    dots
       .append('title')
       .text((pokemon) => `${pokemon.name}（${translateType(pokemon.primaryType)}）`);
 
     const brush = d3
-      .brush() // 建立 D3 brush 行為
+      .brush()
       .extent([
-        [0, 0], // brush 左上角
-        [layout.innerWidth, layout.innerHeight], // brush 右下角（限制在繪圖區域）
+        [0, 0],
+        [layout.innerWidth, layout.innerHeight],
       ])
       .on('end', (event) => {
         const selection = event.selection as [[number, number], [number, number]] | null;
         if (!selection) {
-          setSelectedPokemonKeys([]);
+          setSelectedPokemonKeys((prev) => (prev.length === 0 ? prev : []));
           return;
         }
 
-        const [[x0, y0], [x1, y1]] = selection; // 使用者選框的起點與終點（像素）
+        const [[x0, y0], [x1, y1]] = selection;
         const clampedX = [
-          Math.max(0, Math.min(layout.innerWidth, Math.min(x0, x1))), // clamp X 最小值
-          Math.max(0, Math.min(layout.innerWidth, Math.max(x0, x1))), // clamp X 最大值
+          Math.max(0, Math.min(layout.innerWidth, Math.min(x0, x1))),
+          Math.max(0, Math.min(layout.innerWidth, Math.max(x0, x1))),
         ];
         const clampedY = [
-          Math.max(0, Math.min(layout.innerHeight, Math.min(y0, y1))), // clamp Y 最小值
-          Math.max(0, Math.min(layout.innerHeight, Math.max(y0, y1))), // clamp Y 最大值
+          Math.max(0, Math.min(layout.innerHeight, Math.min(y0, y1))),
+          Math.max(0, Math.min(layout.innerHeight, Math.max(y0, y1))),
         ];
 
+        const currentXScale = activeScalesRef.current?.x ?? layout.xScale;
+        const currentYScale = activeScalesRef.current?.y ?? layout.yScale;
+
         const dataXMin = Math.min(
-          layout.xScale.invert(clampedX[0]),
-          layout.xScale.invert(clampedX[1]),
+          currentXScale.invert(clampedX[0]),
+          currentXScale.invert(clampedX[1]),
         );
         const dataXMax = Math.max(
-          layout.xScale.invert(clampedX[0]),
-          layout.xScale.invert(clampedX[1]),
+          currentXScale.invert(clampedX[0]),
+          currentXScale.invert(clampedX[1]),
         );
         const dataYMin = Math.min(
-          layout.yScale.invert(clampedY[0]),
-          layout.yScale.invert(clampedY[1]),
+          currentYScale.invert(clampedY[0]),
+          currentYScale.invert(clampedY[1]),
         );
         const dataYMax = Math.max(
-          layout.yScale.invert(clampedY[0]),
-          layout.yScale.invert(clampedY[1]),
+          currentYScale.invert(clampedY[0]),
+          currentYScale.invert(clampedY[1]),
         );
+
         const ids = filteredPokemons
           .filter((pokemon) => {
             const xValue = pokemon.stats[xKey];
             const yValue = pokemon.stats[yKey];
             return (
               xValue >= dataXMin && xValue <= dataXMax && yValue >= dataYMin && yValue <= dataYMax
-            ); // 判斷點是否落在選框內
+            );
           })
           .map((pokemon) => buildPokemonSelectionKey(pokemon));
 
-        setSelectedPokemonKeys(ids); // 更新選取結果
+        setSelectedPokemonKeys(ids);
       });
 
-    plot.append('g').attr('class', 'brush').call(brush);
+    const brushGroup = plot.append('g').attr('class', 'brush').call(brush);
+
+    const applyTransform = (transform: d3.ZoomTransform) => {
+      const nextXScale = transform.rescaleX(layout.xScale);
+      const nextYScale = transform.rescaleY(layout.yScale);
+      activeScalesRef.current = {
+        x: nextXScale,
+        y: nextYScale,
+      };
+
+      xAxisGroup.call(d3.axisBottom(nextXScale).ticks(6).tickSize(-layout.innerHeight));
+      xAxisGroup.call(applyAxisStyles);
+
+      yAxisGroup.call(d3.axisLeft(nextYScale).ticks(6).tickSize(-layout.innerWidth));
+      yAxisGroup.call(applyAxisStyles);
+
+      dots
+        .attr('cx', (pokemon) => nextXScale(pokemon.stats[xKey]))
+        .attr('cy', (pokemon) => nextYScale(pokemon.stats[yKey]));
+    };
+
+    const zoomExtent: [[number, number], [number, number]] = [
+      [PLOT_MARGIN.left, PLOT_MARGIN.top],
+      [PLOT_MARGIN.left + layout.innerWidth, PLOT_MARGIN.top + layout.innerHeight],
+    ];
+
+    const zoomBehavior = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.5, 4])
+      .extent(zoomExtent)
+      .translateExtent([
+        [zoomExtent[0][0] - layout.innerWidth, zoomExtent[0][1] - layout.innerHeight],
+        [zoomExtent[1][0] + layout.innerWidth, zoomExtent[1][1] + layout.innerHeight],
+      ])
+      .filter((event) => {
+        if (event.type.startsWith('touch')) {
+          return true;
+        }
+        if (event.type === 'wheel') {
+          return false;
+        }
+        if (event.type === 'mousedown' || event.type === 'pointerdown') {
+          return event.button === 1;
+        }
+        if (event.type === 'mousemove' || event.type === 'pointermove') {
+          return (event.buttons & 4) === 4;
+        }
+        return false;
+      })
+      .on('start', (event) => {
+        if (event.sourceEvent) {
+          root.style('cursor', 'grabbing');
+        }
+      })
+      .on('end', () => {
+        root.style('cursor', 'default');
+      })
+      .on('zoom', (event) => {
+        zoomTransformRef.current = event.transform;
+        applyTransform(event.transform);
+        if (event.sourceEvent) {
+          brushGroup.call(brush.move, null);
+          setSelectedPokemonKeys((prev) => (prev.length === 0 ? prev : []));
+        }
+      });
+
+    zoomBehaviorRef.current = zoomBehavior;
+    root.call(zoomBehavior);
+    root.call(zoomBehavior.transform, zoomTransformRef.current);
+
+    applyTransform(zoomTransformRef.current);
+
+    return () => {
+      root.on('.zoom', null);
+    };
   }, [filteredPokemons, layout, selectedPokemonKeys, statLabelByKey, xKey, yKey]);
 
   const selectedPokemons = useMemo(() => {
@@ -352,19 +458,22 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
       <div className="flex-1 space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <AxisSelector
-            label="X 軸"
-            value={xKey}
-            options={viewModel.statOptions}
-            onChange={handleXKeyChange}
-          />
-          <AxisSelector
-            label="Y 軸"
-            value={yKey}
-            options={viewModel.statOptions}
-            onChange={handleYKeyChange}
-          />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <AxisSelector
+              label="X 軸"
+              value={xKey}
+              options={viewModel.statOptions}
+              onChange={handleXKeyChange}
+            />
+            <AxisSelector
+              label="Y 軸"
+              value={yKey}
+              options={viewModel.statOptions}
+              onChange={handleYKeyChange}
+            />
+          </div>
+          <ZoomControls onZoomIn={handleZoomInClick} onZoomOut={handleZoomOutClick} />
         </div>
 
         <TypeLegend
@@ -417,6 +526,34 @@ function AxisSelector({ label, value, options, onChange }: AxisSelectorProps) {
   );
 }
 
+type ZoomControlsProps = {
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+};
+
+function ZoomControls({ onZoomIn, onZoomOut }: ZoomControlsProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        className="border-border text-foreground hover:bg-muted inline-flex h-9 w-9 items-center justify-center rounded-md border text-lg font-semibold transition"
+        aria-label="縮小"
+        onClick={onZoomOut}
+      >
+        -
+      </button>
+      <button
+        type="button"
+        className="border-border text-foreground hover:bg-muted inline-flex h-9 w-9 items-center justify-center rounded-md border text-lg font-semibold transition"
+        aria-label="放大"
+        onClick={onZoomIn}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 type TypeLegendOption = {
   slug: string;
   label: string;
@@ -455,31 +592,31 @@ function TypeLegend({ options, activeSlugs, onToggle, onReset }: TypeLegendProps
         {options.map((option) => {
           const isActive = activeSlugs.includes(option.slug);
           const buttonStyle = {
-            color: isActive ? withAlphaColor(option.color, 0.8) : '#aaaaaa',
-            // backgroundColor: isActive ? withAlphaColor(option.color, 0.18) : 'transparent',
+            borderColor: option.color,
+            color: option.color,
+            backgroundColor: isActive ? withAlphaColor(option.color, 0.18) : 'transparent',
           };
           return (
             <button
               key={option.slug}
               type="button"
-              className={`flex items-center gap-2 px-1 py-1 text-xs font-medium transition ${
-                isActive ? 'shadow-sm' : 'opacity-80 hover:opacity-100'
+              className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                isActive ? 'shadow-sm' : 'opacity-75 hover:opacity-100'
               }`}
               style={buttonStyle}
               aria-pressed={isActive}
               onClick={() => onToggle(option.slug)}
             >
               <Image
-                src={option.iconPath}
-                alt={option.label}
-                title={option.label}
-                className="h-4 w-4"
                 width={16}
                 height={16}
+                src={option.iconPath}
+                alt={option.label}
+                className="h-4 w-4"
                 style={{ filter: isActive ? 'none' : 'grayscale(1)', opacity: isActive ? 1 : 0.7 }}
                 aria-hidden="true"
               />
-
+              <span>{option.label}</span>
             </button>
           );
         })}
@@ -496,7 +633,7 @@ type SelectionPanelProps = {
 
 function SelectionPanel({ selectedPokemons, statOptions, selectionCount }: SelectionPanelProps) {
   return (
-    <aside className="border-border bg-background w-full max-w-sm space-y-3 rounded-lg border p-4 shadow-sm">
+    <aside className="border-border bg-background max-h-[800px] w-full max-w-sm space-y-3 rounded-lg border p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <h3 className="text-foreground text-sm font-semibold">選取寶可夢</h3>
         <span className="text-muted-foreground text-xs">共 {selectionCount} 隻</span>
@@ -507,7 +644,7 @@ function SelectionPanel({ selectedPokemons, statOptions, selectionCount }: Selec
           從散佈圖中拖曳滑鼠框選區域，以檢視符合條件的寶可夢能力明細。
         </p>
       ) : (
-        <ul className="space-y-3 overflow-auto pr-1" style={{ maxHeight: 420 }}>
+        <ul className="max-h-[720px] space-y-3 overflow-auto pr-1">
           {selectedPokemons.map((pokemon) => (
             <li
               key={`${pokemon.id}_pokemon_name_${pokemon.name.split(' ').join('_').toLowerCase()}`}
