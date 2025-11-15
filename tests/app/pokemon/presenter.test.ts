@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 vi.mock('@/server/useCases', () => ({
   getPokemonBaseStatsUseCase: vi.fn(),
@@ -33,8 +33,8 @@ describe('loadPokemonDetailPageViewModel', () => {
     const viewModel = { pokemons: [], typeOptions: [], statOptions: [], countLabel: '1' };
 
     const execute = vi.fn().mockResolvedValue(dto);
-    (getPokemonBaseStatsUseCase as vi.Mock).mockReturnValue({ execute });
-    (buildPokemonDetailPageViewModel as vi.Mock).mockReturnValue(viewModel);
+    (getPokemonBaseStatsUseCase as Mock).mockReturnValue({ execute });
+    (buildPokemonDetailPageViewModel as Mock).mockReturnValue(viewModel);
 
     const result = await loadPokemonDetailPageViewModel();
 

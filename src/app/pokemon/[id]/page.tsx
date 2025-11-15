@@ -9,7 +9,7 @@ import { loadPokemonDetailPageViewModel } from '../presenter';
 import type { PokemonDetailEntryViewModel } from '../view-models/pokemonDetailViewModel';
 
 type PokemonDetailRouteProps = {
-  params: { id: string } | Promise<{ id: string }>;
+  params: Promise<{ id: string }>;
 };
 
 export async function generateMetadata({ params }: PokemonDetailRouteProps) {

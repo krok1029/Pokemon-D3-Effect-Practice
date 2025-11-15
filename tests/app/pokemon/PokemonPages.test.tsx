@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 const notFoundMock = vi.hoisted(() =>
   vi.fn(() => {
@@ -60,6 +60,7 @@ const buildViewModel = (): PokemonDetailPageViewModel => ({
     { id: 2, name: 'Beta', ...baseEntry },
   ],
   typeOptions: [{ slug: 'fire', label: '火', iconPath: '/types/fire.svg', color: '#f97316' }],
+  statOptions: [{ key: 'hp', label: 'HP' }],
 });
 
 describe('Pokemon pages', () => {
@@ -69,7 +70,7 @@ describe('Pokemon pages', () => {
 
   it('renders PokemonPage with header and passes data into PokemonList', async () => {
     const viewModel = buildViewModel();
-    (loadPokemonDetailPageViewModel as vi.Mock).mockResolvedValue(viewModel);
+    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(viewModel);
 
     render(await PokemonPage());
 
@@ -87,21 +88,21 @@ describe('Pokemon pages', () => {
 
   it('generates metadata for specific pokemon and uses fallback for invalid ids', async () => {
     const viewModel = buildViewModel();
-    (loadPokemonDetailPageViewModel as vi.Mock).mockResolvedValue(viewModel);
+    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(viewModel);
 
-    const metadata = await generateMetadata({ params: { id: '1' } });
+    const metadata = await generateMetadata({ params: Promise.resolve({ id: '1' }) });
     expect(metadata.title).toContain('Alpha');
     expect(metadata.description).toContain('Alpha');
 
-    const fallback = await generateMetadata({ params: { id: 'abc' } });
+    const fallback = await generateMetadata({ params: Promise.resolve({ id: 'abc' }) });
     expect(fallback.title).toBe('寶可夢資料');
   });
 
   it('renders PokemonDetailRoute with pokemon data and image', async () => {
     const viewModel = buildViewModel();
-    (loadPokemonDetailPageViewModel as vi.Mock).mockResolvedValue(viewModel);
+    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(viewModel);
 
-    render(await PokemonDetailRoute({ params: { id: '1' } }));
+    render(await PokemonDetailRoute({ params: Promise.resolve({ id: '1' }) }));
 
     expect(screen.getByText('Alpha')).toBeInTheDocument();
     expect(screen.getAllByText('#001')[0]).toBeInTheDocument();
@@ -112,20 +113,24 @@ describe('Pokemon pages', () => {
   it('renders fallback text when pokemon image is missing', async () => {
     const viewModel = buildViewModel();
     viewModel.pokemons = [{ ...viewModel.pokemons[0], id: 3, name: 'Gamma', imagePath: null }];
-    (loadPokemonDetailPageViewModel as vi.Mock).mockResolvedValue(viewModel);
+    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(viewModel);
 
-    render(await PokemonDetailRoute({ params: { id: '3' } }));
+    render(await PokemonDetailRoute({ params: Promise.resolve({ id: '3' }) }));
 
     expect(screen.getByText('Gamma')).toBeInTheDocument();
     expect(screen.getByText('無圖片')).toBeInTheDocument();
   });
 
   it('calls notFound when id is invalid or missing', async () => {
-    await expect(PokemonDetailRoute({ params: { id: 'xyz' } })).rejects.toThrow('NEXT_NOT_FOUND');
+    await expect(PokemonDetailRoute({ params: Promise.resolve({ id: 'xyz' }) })).rejects.toThrow(
+      'NEXT_NOT_FOUND',
+    );
     expect(notFoundMock).toHaveBeenCalledTimes(1);
 
-    (loadPokemonDetailPageViewModel as vi.Mock).mockResolvedValue(buildViewModel());
-    await expect(PokemonDetailRoute({ params: { id: '999' } })).rejects.toThrow('NEXT_NOT_FOUND');
+    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(buildViewModel());
+    await expect(PokemonDetailRoute({ params: Promise.resolve({ id: '999' }) })).rejects.toThrow(
+      'NEXT_NOT_FOUND',
+    );
     expect(notFoundMock).toHaveBeenCalledTimes(2);
   });
 });
