@@ -41,6 +41,8 @@ const buildPokemon = (
     { key: 'spDef', label: '特防', value: 65, ratio: 0.65 },
     { key: 'speed', label: '速度', value: 85, ratio: 0.85 },
   ],
+  defenseMatchups: [],
+  offenseMatchups: [],
   ...overrides,
 });
 

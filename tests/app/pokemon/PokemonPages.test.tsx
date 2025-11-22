@@ -51,6 +51,40 @@ const baseEntry: Omit<PokemonDetailEntryViewModel, 'id' | 'name'> = {
   typeBadges: [{ slug: 'fire', label: '火', iconPath: '/types/fire.svg', color: '#f97316' }],
   stats: [{ key: 'hp', label: 'HP', value: 45, ratio: 0.5 }],
   total: 45,
+  defenseMatchups: [
+    {
+      slug: 'fire',
+      label: '火',
+      iconPath: '/types/fire.svg',
+      color: '#f97316',
+      multiplier: 2,
+      multiplierLabel: '2',
+      category: 'super',
+      order: 1,
+    },
+    {
+      slug: 'water',
+      label: '水',
+      iconPath: '/types/water.svg',
+      color: '#38bdf8',
+      multiplier: 0.5,
+      multiplierLabel: '0.5',
+      category: 'notVery',
+      order: 2,
+    },
+  ],
+  offenseMatchups: [
+    {
+      slug: 'grass',
+      label: '草',
+      iconPath: '/types/grass.svg',
+      color: '#4ade80',
+      multiplier: 2,
+      multiplierLabel: '2',
+      category: 'super',
+      order: 4,
+    },
+  ],
 };
 
 const buildViewModel = (): PokemonDetailPageViewModel => ({
@@ -108,6 +142,10 @@ describe('Pokemon pages', () => {
     expect(screen.getAllByText('#001')[0]).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Alpha' })).toHaveAttribute('src', '/img/001.png');
     expect(screen.getByText('能力值總和')).toBeInTheDocument();
+    expect(screen.getByText('屬性弱點倍率表')).toBeInTheDocument();
+    expect(screen.getByText('防禦方')).toBeInTheDocument();
+    expect(screen.getByText('攻擊方')).toBeInTheDocument();
+    expect(screen.getAllByText('2×')).toHaveLength(2);
   });
 
   it('renders fallback text when pokemon image is missing', async () => {
