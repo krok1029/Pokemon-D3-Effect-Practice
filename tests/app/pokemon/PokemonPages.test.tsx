@@ -143,10 +143,10 @@ describe('Pokemon pages', () => {
     expect(screen.getAllByText('#001')[0]).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Alpha' })).toHaveAttribute('src', '/img/001.png');
     expect(screen.getByText('能力值總和')).toBeInTheDocument();
-    expect(screen.getByText('屬性相剋指南')).toBeInTheDocument();
-    expect(screen.getByText('被攻擊時：這隻怕什麼？')).toBeInTheDocument();
-    expect(screen.getByText('攻擊時：打哪些屬性更有效？')).toBeInTheDocument();
-    expect(screen.getAllByText('2×')).toHaveLength(2);
+    expect(screen.getByText('屬性相剋對照')).toBeInTheDocument();
+    expect(screen.getByText('被攻擊方')).toBeInTheDocument();
+    expect(screen.getByText('攻擊方')).toBeInTheDocument();
+    expect(screen.getAllByText('×2')).toHaveLength(2);
   });
 
   it('renders fallback text when pokemon image is missing', async () => {
@@ -157,7 +157,7 @@ describe('Pokemon pages', () => {
     render(await PokemonDetailRoute({ params: Promise.resolve({ id: '3' }) }));
 
     expect(screen.getByText('Gamma')).toBeInTheDocument();
-    expect(screen.getByText('無圖片')).toBeInTheDocument();
+    expect(screen.getAllByText('無圖片')).toHaveLength(3);
   });
 
   it('calls notFound when id is invalid or missing', async () => {

@@ -136,13 +136,7 @@ export default async function PokemonDetailRoute(props: PokemonDetailRouteProps)
         </Card>
       </div>
 
-      {hasMatchups ? (
-        <TypeMatchupPanel
-          defenseMatchups={pokemon.defenseMatchups}
-          offenseMatchups={pokemon.offenseMatchups}
-          ownTypeLabels={pokemon.typeBadges.map((type) => type.label)}
-        />
-      ) : null}
+      {hasMatchups ? <TypeMatchupPanel pokemon={pokemon} /> : null}
     </section>
   );
 }
@@ -168,113 +162,54 @@ function PokemonImage({ pokemon }: { pokemon: PokemonDetailEntryViewModel }) {
   );
 }
 
-type TypeMatchupPanelProps = {
-  ownTypeLabels: string[];
-  defenseMatchups: PokemonTypeMatchupViewModel[];
-  offenseMatchups: PokemonTypeMatchupViewModel[];
-};
-
-function TypeMatchupPanel({
-  defenseMatchups,
-  offenseMatchups,
-  ownTypeLabels,
-}: TypeMatchupPanelProps) {
-  const neutralDefense = defenseMatchups.filter((entry) => entry.multiplier === 1);
-
+function TypeMatchupPanel({ pokemon }: { pokemon: PokemonDetailEntryViewModel }) {
+  const ownTypes = pokemon.typeBadges.map((type) => type.label).join('或');
   return (
     <Card className="border border-slate-200/70 dark:border-slate-800">
       <CardHeader>
-        <h2 className="text-xl font-semibold">屬性相剋指南</h2>
+        <h2 className="text-xl font-semibold">屬性相剋對照</h2>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          先看防禦，知道這隻怕什麼；再看攻擊，找出適合對付的屬性。
+          跟著箭頭看攻擊方向；×2 傷害加倍、×0.5 傷害減半、×0 完全無效。
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        <section aria-label="防禦相剋" className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold">被攻擊時：這隻怕什麼？</h3>
-            <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              下列屬性是對手的招式。倍率越高，這隻受到的屬性傷害越多。
-            </p>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3">
-            <MatchupGroup
-              title="弱點"
-              description="2× 兩倍傷害 · 4× 四倍傷害"
-              tone="danger"
-              matchups={defenseMatchups.filter((entry) => entry.multiplier > 1)}
-              empty="沒有屬性弱點"
-            />
-            <MatchupGroup
-              title="抗性"
-              description="0.5× 一半傷害 · 0.25× 四分之一傷害"
-              tone="resist"
-              matchups={defenseMatchups.filter(
-                (entry) => entry.multiplier > 0 && entry.multiplier < 1,
-              )}
-              empty="沒有屬性抗性"
-            />
-            <MatchupGroup
-              title="免疫"
-              description="0× 不受這種屬性的招式傷害"
-              tone="immune"
-              matchups={defenseMatchups.filter((entry) => entry.multiplier === 0)}
-              empty="沒有免疫的屬性"
-            />
-          </div>
-          <details className="rounded-xl border border-slate-200 dark:border-slate-800">
-            <summary className="min-h-11 cursor-pointer rounded-xl px-4 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
-              一般傷害 · 1×（{neutralDefense.length} 種屬性）
-            </summary>
-            <div className="px-4 pb-4">
-              <MatchupChips matchups={neutralDefense} />
+        <div className="grid divide-y divide-slate-200 lg:grid-cols-2 lg:divide-x lg:divide-y-0 dark:divide-slate-800">
+          <section aria-label="攻擊相剋" className="min-w-0 space-y-6 pb-6 lg:pr-8 lg:pb-0">
+            <div>
+              <h3 className="text-lg font-semibold">攻擊方</h3>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                這隻攻擊不同屬性的對手
+              </p>
             </div>
-          </details>
-        </section>
-        <details className="rounded-xl border border-slate-200 dark:border-slate-800">
-          <summary className="min-h-11 cursor-pointer rounded-xl px-4 py-4 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
-            <h3 className="inline">攻擊時：打哪些屬性更有效？</h3>
-          </summary>
-          <section aria-label="攻擊相剋" className="space-y-4 px-4 pb-4">
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              下列屬性是對手的屬性。假設使用這隻的{ownTypeLabels.join('或')}
-              屬性招式，選擇其中效果最好的一種；只考慮單一屬性的對手。
-            </p>
-            <div className="grid gap-4 md:grid-cols-2">
-              <MatchupGroup
-                title="效果絕佳"
-                description="2× 傷害加倍"
-                tone="resist"
-                matchups={offenseMatchups.filter((entry) => entry.multiplier > 1)}
-                empty="沒有可造成加倍傷害的屬性"
-              />
-              <MatchupGroup
-                title="效果不佳"
-                description="0.5× 傷害減半"
-                tone="danger"
-                matchups={offenseMatchups.filter(
-                  (entry) => entry.multiplier > 0 && entry.multiplier < 1,
-                )}
-                empty="沒有傷害減半的屬性"
-              />
-              <MatchupGroup
-                title="無法造成傷害"
-                description="0× 對手免疫"
-                tone="immune"
-                matchups={offenseMatchups.filter((entry) => entry.multiplier === 0)}
-                empty="沒有完全免疫這些攻擊的屬性"
-              />
-              <MatchupGroup
-                title="一般效果"
-                description="1× 正常傷害"
-                tone="neutral"
-                matchups={offenseMatchups.filter((entry) => entry.multiplier === 1)}
-                empty="沒有一般效果的屬性"
-              />
+            <MatchupPokemon pokemon={pokemon} roleLabel="攻擊方" />
+            <AttackDirection label={`使用${ownTypes}屬性招式`} />
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">對手的屬性 · 造成的倍率</h4>
+              <MatchupChips matchups={pokemon.offenseMatchups} />
             </div>
+            <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              使用自身屬性的招式，選擇其中效果最好的一種；對手只按單一屬性計算。
+            </p>
           </section>
-        </details>
-        <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          <section aria-label="防禦相剋" className="min-w-0 space-y-6 pt-6 lg:pt-0 lg:pl-8">
+            <div>
+              <h3 className="text-lg font-semibold">被攻擊方</h3>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                不同屬性的招式攻擊這隻
+              </p>
+            </div>
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">對手的招式屬性 · 承受的倍率</h4>
+              <MatchupChips matchups={pokemon.defenseMatchups} />
+            </div>
+            <AttackDirection label="受到這些屬性的招式攻擊" />
+            <MatchupPokemon pokemon={pokemon} roleLabel="被攻擊方" />
+            <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              大於 ×1 是弱點，小於 ×1 是抗性，×0 表示免疫。
+            </p>
+          </section>
+        </div>
+        <p className="border-t border-slate-200 pt-4 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
           這裡只計算屬性相剋，不含本系加成、特性、道具與實際招式配置，並非最終傷害。
         </p>
       </CardContent>
@@ -282,45 +217,59 @@ function TypeMatchupPanel({
   );
 }
 
-const GROUP_TONES = {
-  danger:
-    'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-900 dark:bg-rose-950/25 dark:text-rose-100',
-  resist:
-    'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/25 dark:text-emerald-100',
-  immune:
-    'border-violet-200 bg-violet-50 text-violet-950 dark:border-violet-900 dark:bg-violet-950/25 dark:text-violet-100',
-  neutral:
-    'border-slate-200 bg-slate-50 text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100',
-};
-
-function MatchupGroup({
-  title,
-  description,
-  matchups,
-  empty,
-  tone,
+function MatchupPokemon({
+  pokemon,
+  roleLabel,
 }: {
-  title: string;
-  description: string;
-  matchups: PokemonTypeMatchupViewModel[];
-  empty: string;
-  tone: keyof typeof GROUP_TONES;
+  pokemon: PokemonDetailEntryViewModel;
+  roleLabel: string;
 }) {
   return (
-    <section
-      aria-label={title}
-      className={`min-w-0 space-y-3 rounded-xl border p-4 ${GROUP_TONES[tone]}`}
-    >
-      <div>
-        <h4 className="font-semibold">{title}</h4>
-        <p className="mt-1 text-sm leading-relaxed">{description}</p>
-      </div>
-      {matchups.length ? <MatchupChips matchups={matchups} /> : <p className="text-sm">{empty}</p>}
-    </section>
+    <figure className="mx-auto flex w-full max-w-56 flex-col items-center rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/40">
+      {pokemon.imagePath ? (
+        <Image
+          src={pokemon.imagePath}
+          alt=""
+          width={128}
+          height={128}
+          className="h-32 w-32 object-contain"
+        />
+      ) : (
+        <div className="flex h-32 items-center text-sm text-slate-500">無圖片</div>
+      )}
+      <figcaption className="mt-2 text-center text-sm font-semibold">
+        {pokemon.name} · {roleLabel}
+      </figcaption>
+      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        {pokemon.typeBadges.map((type) => type.label).join(' / ')}
+      </p>
+    </figure>
+  );
+}
+
+function AttackDirection({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2 text-slate-500 dark:text-slate-400">
+      <span className="text-center text-sm">{label}</span>
+      <svg
+        aria-hidden="true"
+        width="24"
+        height="32"
+        viewBox="0 0 24 32"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 2v27m-7-7 7 7 7-7" />
+      </svg>
+    </div>
   );
 }
 
 function MatchupChips({ matchups }: { matchups: PokemonTypeMatchupViewModel[] }) {
+  if (!matchups.length) return <p className="text-sm text-slate-500">尚無屬性資料。</p>;
   return (
     <ul className="flex flex-wrap gap-2">
       {matchups.map((matchup) => (
@@ -336,7 +285,7 @@ function MatchupChips({ matchups }: { matchups: PokemonTypeMatchupViewModel[] })
             className="h-[18px] w-[18px]"
           />
           <span>{matchup.label}</span>
-          <span className="font-bold tabular-nums">{matchup.multiplierLabel}×</span>
+          <span className="font-bold tabular-nums">×{matchup.multiplierLabel}</span>
         </li>
       ))}
     </ul>

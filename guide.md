@@ -10,7 +10,7 @@
 | 圖表資料如何取得 | `src/app/(routes)/chart/presenter.ts` |
 | 散佈圖互動 | `src/app/(routes)/chart/components/StatScatterMatrix.tsx` |
 | 圖鑑搜尋與篩選 | `src/app/pokemon/components/PokemonList.tsx` |
-| 詳細頁與相剋分組 | `src/app/pokemon/[id]/page.tsx` |
+| 詳細頁與攻擊方向對照 | `src/app/pokemon/[id]/page.tsx` |
 | 相剋算法與詳細頁資料格式 | `src/app/pokemon/view-models/pokemonDetailViewModel.ts` |
 | CSV 如何轉成領域物件 | `src/infra/csv/CsvPokemonMapper.ts` |
 | 服務如何建立 | `src/server/container.ts` |
@@ -66,7 +66,7 @@ Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`At
 
 `StatScatterMatrix` 名稱保留自先前設計，現況是可切換 X/Y 軸的單一散佈圖，並非同時呈現所有能力配對的矩陣。
 
-雷達圖、直條圖和散佈圖在 `useEffect` 中由 D3 操作 SVG；React 管理容器、控制項與資料。詳細頁以 React 呈現弱點、抗性、免疫分組，每個屬性直接標出倍率；一般傷害與攻擊相剋使用原生 details 展開，不依賴雙環圖或卡片內捲動。
+雷達圖、直條圖和散佈圖在 `useEffect` 中由 D3 操作 SVG；React 管理容器、控制項與資料。詳細頁以 React 呈現攻擊／被攻擊雙欄對照：左欄由寶可夢圖片指向對手屬性，右欄由招式屬性指向寶可夢圖片。兩邊直接顯示全部 18 種屬性與倍率，手機版上下排列，不需展開或在卡片內捲動。
 
 能力條的長度依該能力在整份載入資料中的最大值正規化，不是固定除以 255；不同能力的條長不能直接當成相同刻度比較。
 
