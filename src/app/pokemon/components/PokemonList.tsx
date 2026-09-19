@@ -16,12 +16,12 @@ import {
 } from '../lib/pokemonListQuery';
 
 import type {
-  PokemonDetailEntryViewModel,
+  PokemonCardViewModel,
   PokemonTypeBadgeViewModel,
-} from '../view-models/pokemonDetailViewModel';
+} from '../view-models/pokemonCardViewModel';
 
 type PokemonListProps = {
-  pokemons: PokemonDetailEntryViewModel[];
+  pokemons: PokemonCardViewModel[];
   typeOptions: PokemonTypeBadgeViewModel[];
 };
 
@@ -223,7 +223,7 @@ export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
 }
 
 type PokemonCardProps = {
-  pokemon: PokemonDetailEntryViewModel;
+  pokemon: PokemonCardViewModel;
   returnTo: string;
 };
 

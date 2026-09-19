@@ -32,14 +32,14 @@ vi.mock('@/app/pokemon/components/PokemonList', () => ({
 }));
 
 vi.mock('@/app/pokemon/presenter', () => ({
-  loadPokemonDetailPageViewModel: vi.fn(),
+  loadPokemonListViewModel: vi.fn(),
   loadPokemonFormViewModel: vi.fn(),
 }));
 
 import PokemonDetailRoute, { generateMetadata } from '@/app/pokemon/[id]/page';
 import { PokemonList } from '@/app/pokemon/components/PokemonList';
 import PokemonPage from '@/app/pokemon/page';
-import { loadPokemonDetailPageViewModel, loadPokemonFormViewModel } from '@/app/pokemon/presenter';
+import { loadPokemonListViewModel, loadPokemonFormViewModel } from '@/app/pokemon/presenter';
 import type {
   PokemonDetailEntryViewModel,
   PokemonDetailPageViewModel,
@@ -105,7 +105,7 @@ describe('Pokemon pages', () => {
 
   it('renders PokemonPage with header and passes data into PokemonList', async () => {
     const viewModel = buildViewModel();
-    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(viewModel);
+    (loadPokemonListViewModel as Mock).mockResolvedValue(viewModel);
 
     render(await PokemonPage());
 

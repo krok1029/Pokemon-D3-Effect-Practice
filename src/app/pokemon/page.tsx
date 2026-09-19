@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { buildDatasetSummaryViewModel } from '@/app/view-models/datasetSummaryViewModel';
 
 import { PokemonList } from './components/PokemonList';
-import { loadPokemonDetailPageViewModel } from './presenter';
+import { loadPokemonListViewModel } from './presenter';
 
 import type { Metadata } from 'next';
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PokemonPage() {
-  const viewModel = await loadPokemonDetailPageViewModel();
+  const viewModel = await loadPokemonListViewModel();
   const summary = buildDatasetSummaryViewModel(viewModel.pokemons);
 
   return (
