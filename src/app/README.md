@@ -11,6 +11,8 @@
 
 路由群組 `(routes)` 不會出現在網址，也不是所有頁面都必須放入該群組；目前 `pokemon` 就直接位於 `app` 下。
 
+`api/pokemon/route.ts` 與列表頁共用 `loadPokemonListPage`。列表不產生詳細相剋；`PokemonFeed` 管理分批請求、失敗重試及位置，`PokemonVirtualGrid` 管理虛擬列，`PokemonCardImage` 管理圖片載入。
+
 ## 維護邊界
 
 需要瀏覽器狀態與 D3 DOM 操作的元件使用 `'use client'`；Presenter、CSV 依賴及圖片檔案掃描留在伺服器端。共用 UI 保持通用，功能專屬元件與對應頁面放在一起。

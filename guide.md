@@ -1,6 +1,6 @@
 # 開發指南
 
-這份指南說明現有程式如何運作，以及改動時應追蹤的邊界。用途、啟動指令與資料總覽見 [README](README.md)，工作狀態集中於 [ROADMAP](ROADMAP.md)。以下隨 2026-09-19 第一批實作更新。
+這份指南說明現有程式如何運作，以及改動時應追蹤的邊界。用途、啟動指令與資料總覽見 [README](README.md)，工作狀態集中於 [ROADMAP](ROADMAP.md)。以下隨 2026-09-19 的 #19 無限捲動實作更新。
 
 ## 1. 從哪裡開始讀
 
@@ -38,7 +38,7 @@ flowchart TD
 | `GetAveragePokemonStatsByTypeUseCase` | 各屬性的樣本數及六項平均；雙屬性同時計入兩組 |
 | `GetPokemonBaseStatsUseCase` | 每筆資料的編號、名稱、屬性、傳說狀態與原始能力值 |
 
-三個 UseCase 都支援 `excludeLegendaries`。Repository 查詢可追加 `id` 與 `formId`；`GetPokemonBaseStatsUseCase.executeForForm` 取得指定型態或舊網址的預設型態。尚無分頁查詢。
+三個 UseCase 都支援 `excludeLegendaries`。Repository 查詢可追加 `id` 與 `formId`；`GetPokemonBaseStatsUseCase.executeForForm` 取得指定型態或舊網址的預設型態。圖鑑的篩選與每批 24 筆切片由 App 列表 ViewModel 處理，UseCase 與 Repository 仍維持既有 DTO／查詢契約。
 
 ## 3. Domain 與資料語意
 
@@ -52,7 +52,7 @@ Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`At
 
 ## 4. App 層與互動狀態
 
-頁面通常由 Server Component 呼叫 Presenter，再將可序列化的 ViewModel 傳給 Client Component。資料讀取使用 Node.js 檔案系統，現有架構需要可讀取 `data` 與 `public/img` 的伺服器環境；目前沒有 API Route 或獨立後端服務。
+頁面通常由 Server Component 呼叫 Presenter，再將可序列化的 ViewModel 傳給 Client Component。資料讀取使用 Node.js 檔案系統，現有架構需要可讀取 `data` 與 `public/img` 的伺服器環境；`GET /api/pokemon` 提供無限捲動的後續批次，與頁面共用 Presenter；沒有獨立後端服務。
 
 首頁及圖鑑明確設定動態呈現，避免正式建置把 CSV 資料固定在建置時；切換 `POKEMON_DATA_PATH` 後重新啟動服務即可套用同一份資料。篩選控制在瀏覽器完成初始化前保持停用，避免較慢載入時輸入遺失。
 
@@ -72,11 +72,19 @@ Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`At
 
 ## 5. 圖鑑與屬性相剋
 
-列表的 `loadPokemonDetailPageViewModel` 仍會為所有資料建立完整 ViewModel，簡化卡片資料與分段載入留待 #19。詳細頁及 metadata 共用 `loadPokemonFormViewModel`，只為目標型態組裝詳細相剋，同時保留整份資料的能力最大值刻度。
+列表的 `loadPokemonListPage` 先篩選、排序、切出 24 筆，再透過 `pokemonCardViewModel` 組裝卡片；不包含攻擊／防禦相剋。總數、屬性選項和能力最大值仍以完整資料計算。詳細頁及 metadata 共用 `loadPokemonFormViewModel`，只為目標型態組裝詳細相剋，同時保留整份資料的能力最大值刻度。
+
+`PokemonFeed` 在距離底部 600px 內請求下一批，保留可用鍵盤操作的「載入更多」、前一批與錯誤重試按鈕。切換條件會取消舊請求並重設批次；搜尋請求延後 150ms，控制項和網址立即更新。
+
+`PokemonVirtualGrid` 在累積超過 48 筆後，以 TanStack Virtual 量測每列高度，只渲染視窗及前後各兩列；保留焦點所在列與相鄰列，支援鍵盤繼續前進。改變視窗欄數、切換虛擬版面或載入前段時，以卡片錨點維持位置。圖鑑掛載期間停用瀏覽器自動捲動錨定，避免頁尾追隨新增資料。
+
+`PokemonCardImage` 保留 96×96 空間，起始前三張優先，其餘圖片靠近視窗 240px 內才請求；有載入佔位、淡入、缺圖與失敗提示。虛擬列表捲動停止 160ms 後再請求新進入畫面的圖片；同一張掛載中的卡片不會因捲動而移除已請求的圖片。
 
 型態網址例如 `/pokemon/6?form=mega-charizard-x`。名稱相同且 CSV 重排時網址不變；名稱若改名則需另行處理舊 slug 的轉址。舊 `/pokemon/6` 依同編號中最短名稱、再按名稱排序選定預設型態，預設 CSV 會得到 Charizard；這是穩定的退回策略，不宣稱能辨識任意來源的基本型態。非法編號、格式錯誤或不存在的明示型態顯示找不到資料。
 
-圖鑑詳細連結附帶受限制的 `returnTo`，保留篩選條件及原卡片錨點；詳細頁的返回入口只接受本網站圖鑑路徑與已知參數。直接開啟詳細頁時返回完整圖鑑。
+圖鑑詳細連結附帶受限制的 `returnTo`，保留篩選條件、`page` 批次及原卡片錨點；詳細頁的返回入口只接受本網站圖鑑路徑與已知參數。直接開啟詳細頁時返回圖鑑第一批。批次超過總數會回到最後一批，非正整數回到第一批；空結果亦回到第一批。
+
+捲到不同批次時以 `replaceState` 記錄目前批次，避免每次載入都增加歷史紀錄。開啟詳細頁前固定來源錨點，阻止尚未結束的捲動事件覆寫它；sessionStorage 額外保留卡片在視窗中的高度。分享或刷新後即使沒有這份暫存，仍可依網址的批次與錨點回到原卡片。深層返回只載入該批，較早的資料可用「載入前 24 筆」取得。
 
 目前相剋計算：
 
