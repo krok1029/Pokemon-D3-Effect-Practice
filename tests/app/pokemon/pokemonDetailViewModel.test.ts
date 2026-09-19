@@ -63,4 +63,15 @@ describe('buildPokemonDetailPageViewModel', () => {
 
     expect(vm.typeOptions.map((t) => t.slug)).toEqual(['water', 'fire', 'flying']);
   });
+
+  it('keeps missing-type presentation empty instead of inventing neutral matchups', () => {
+    // The domain rejects absent primary types; this covers the presentation fallback.
+    const vm = buildPokemonDetailPageViewModel([
+      { ...entries[0], primaryType: '', secondaryType: null },
+    ]);
+
+    expect(vm.pokemons[0].typeBadges).toEqual([]);
+    expect(vm.pokemons[0].offenseMatchups).toEqual([]);
+    expect(vm.pokemons[0].defenseMatchups).toEqual([]);
+  });
 });

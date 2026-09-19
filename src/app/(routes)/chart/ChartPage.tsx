@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/app/components/ui/card';
+import { buildDatasetSummaryViewModel } from '@/app/view-models/datasetSummaryViewModel';
 
 import { LegendaryToggle } from './components/LegendaryToggle';
 import { RadarChart } from './components/RadarChart';
@@ -26,6 +27,7 @@ export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) 
     loadTypeAverageStatsViewModel({ excludeLegendaries }),
     loadPokemonStatsMatrixViewModel({ excludeLegendaries }),
   ]);
+  const summary = buildDatasetSummaryViewModel(statsMatrix.pokemons);
 
   return (
     <section className="space-y-8">
@@ -33,8 +35,12 @@ export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) 
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">寶可夢能力平均值</h1>
           <p className="text-muted-foreground text-sm">
-            目前共彙整 {averages.countLabel} 隻{excludeLegendaries ? '非傳說' : ''}
-            寶可夢，以下列表顯示六項基礎能力的平均值。
+            目前彙整 {summary.sampleCountLabel} 筆型態樣本，涵蓋 {summary.speciesCountLabel}{' '}
+            個不同圖鑑編號{excludeLegendaries ? '（已排除傳說寶可夢）' : ''}
+            ，以下顯示六項基礎能力的平均值。
+          </p>
+          <p className="text-muted-foreground text-sm">
+            每筆型態資料為一個樣本；同一圖鑑編號可能有多種型態。傳說狀態沿用資料來源的標記。
           </p>
         </div>
         <LegendaryToggle excludeLegendaries={excludeLegendaries} />
@@ -68,6 +74,7 @@ export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) 
           <CardTitle className="text-xl">依屬性比較能力平均值</CardTitle>
           <CardDescription>
             各屬性依選擇的能力值排序，橫條越長代表平均值越高。切換「排除傳說寶可夢」會更新結果。
+            雙屬性樣本同時計入兩組，各組筆數不可直接相加作為物種數。
           </CardDescription>
         </CardHeader>
         <CardContent className="pb-6">

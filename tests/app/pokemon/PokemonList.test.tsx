@@ -80,7 +80,10 @@ describe('PokemonList', () => {
     expect(screen.getByText('無圖片')).toBeInTheDocument();
 
     const detailLink = screen.getAllByText('查看詳情 →')[0].closest('a');
-    expect(detailLink).toHaveAttribute('href', '/pokemon/25');
+    expect(detailLink).toHaveAttribute(
+      'href',
+      '/pokemon/25?returnTo=%2Fpokemon%23pokemon-25-pikachu',
+    );
 
     expect(screen.getByText('傳說')).toBeInTheDocument();
     expect(screen.getAllByText('能力值總和')[0]).toBeInTheDocument();

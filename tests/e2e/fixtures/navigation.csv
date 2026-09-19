@@ -1,0 +1,5 @@
+Number,Name,Type 1,Type 2,HP,Att,Def,Spa,Spd,Spe,Legendary
+1,Bulbasaur,Grass,Poison,45,49,49,65,65,45,0
+3,Venusaur,Grass,Poison,80,82,83,100,100,80,0
+3,Mega Venusaur,Grass,Poison,80,100,123,122,120,80,0
+151,Mew,Psychic,,100,100,100,100,100,100,1

@@ -7,7 +7,7 @@
 - `(routes)/chart/`：`page.tsx` 解析排除傳說的網址參數，`ChartPage.tsx` 組合三組統計資料；`presenter.ts` 與 `view-models/` 轉換資料；`components/` 放雷達圖、直條圖、散佈圖及切換控制項。
 - `pokemon/`：圖鑑列表頁、Presenter、列表元件、詳細頁 ViewModel 與圖片查找；`[id]/page.tsx` 顯示個別資料和相剋雙環圖。
 - `components/`：共用 Card、Tooltip 與 ThemeProvider。沒有 `dashboard` 或 `charts` 子目錄。
-- `layout.tsx`、`globals.css`：導覽列、頁尾、主題與全域樣式；`page.tsx` 的首頁主要內容目前空白。
+- `layout.tsx`、`globals.css`：桌面／手機導覽、頁尾、主題與全域樣式；`page.tsx` 顯示網站用途、實際資料範圍與圖鑑／圖表入口。
 
 路由群組 `(routes)` 不會出現在網址，也不是所有頁面都必須放入該群組；目前 `pokemon` 就直接位於 `app` 下。
 

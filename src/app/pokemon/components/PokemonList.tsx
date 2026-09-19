@@ -2,9 +2,18 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+
+import {
+  pokemonCardAnchor,
+  pokemonDetailReturnHref,
+  pokemonListHref,
+  readPokemonListFilters,
+  type PokemonListFilters,
+} from '../lib/pokemonListQuery';
 
 import type {
   PokemonDetailEntryViewModel,
@@ -17,9 +26,60 @@ type PokemonListProps = {
 };
 
 export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
-  const [search, setSearch] = useState('');
-  const [onlyLegendary, setOnlyLegendary] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const query = searchParams?.toString() ?? '';
+  const validTypes = useMemo(() => typeOptions.map((type) => type.slug), [typeOptions]);
+  const [filters, setFilters] = useState(() =>
+    readPokemonListFilters(new URLSearchParams(query), validTypes),
+  );
+  const { search, onlyLegendary, typeFilter } = filters;
+  const editingSearch = useRef(false);
+  const [isInteractive, setIsInteractive] = useState(false);
+
+  useEffect(() => {
+    if (query !== new URLSearchParams(window.location.search).toString()) return;
+    const next = readPokemonListFilters(new URLSearchParams(query), validTypes);
+    setFilters(next);
+    const href = pokemonListHref(next);
+    if (
+      window.location.pathname === '/pokemon' &&
+      href !== window.location.pathname + window.location.search
+    ) {
+      window.history.replaceState(null, '', href + window.location.hash);
+    }
+  }, [query, validTypes]);
+
+  useEffect(() => {
+    setIsInteractive(true);
+    const finishEditing = () => {
+      editingSearch.current = false;
+    };
+    window.addEventListener('popstate', finishEditing);
+    return () => window.removeEventListener('popstate', finishEditing);
+  }, []);
+
+  function updateFilters(next: PokemonListFilters, typing = false) {
+    setFilters(next);
+    const href = pokemonListHref(next);
+    const currentHref = window.location.pathname + window.location.search;
+    if (href !== currentHref || window.location.hash) {
+      if (typing && editingSearch.current) {
+        window.history.replaceState(null, '', href);
+      } else {
+        window.history.pushState(null, '', href);
+      }
+    }
+    editingSearch.current = typing;
+  }
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!/^#pokemon-\d+-[a-z0-9-]+$/.test(hash)) return;
+    const frame = requestAnimationFrame(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [query]);
 
   const filtered = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -41,7 +101,12 @@ export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/60">
+      <fieldset
+        disabled={!isInteractive}
+        aria-busy={!isInteractive}
+        className="flex min-w-0 flex-col gap-4 rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/60"
+      >
+        <legend className="sr-only">搜尋與篩選寶可夢</legend>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <label className="space-y-2 lg:w-2/3">
             <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -49,7 +114,13 @@ export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
             </div>
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => updateFilters({ ...filters, search: event.target.value }, true)}
+              onBlur={() => {
+                editingSearch.current = false;
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') editingSearch.current = false;
+              }}
               placeholder="輸入編號或名稱，例如 25、Pikachu"
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-base shadow-sm transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-slate-400 dark:focus:ring-slate-800"
             />
@@ -59,7 +130,9 @@ export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
             <input
               type="checkbox"
               checked={onlyLegendary}
-              onChange={(event) => setOnlyLegendary(event.target.checked)}
+              onChange={(event) =>
+                updateFilters({ ...filters, onlyLegendary: event.target.checked })
+              }
               className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500 dark:border-slate-600 dark:bg-slate-900"
             />
             只顯示傳說寶可夢
@@ -71,7 +144,8 @@ export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setTypeFilter(null)}
+              onClick={() => updateFilters({ ...filters, typeFilter: null })}
+              aria-pressed={typeFilter === null}
               className={[
                 'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium transition',
                 typeFilter === null
@@ -87,7 +161,10 @@ export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
                 <button
                   key={type.slug}
                   type="button"
-                  onClick={() => setTypeFilter(active ? null : type.slug)}
+                  onClick={() =>
+                    updateFilters({ ...filters, typeFilter: active ? null : type.slug })
+                  }
+                  aria-pressed={active}
                   style={
                     active
                       ? {
@@ -104,13 +181,7 @@ export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
                       : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800',
                   ].join(' ')}
                 >
-                  <Image
-                    src={type.iconPath}
-                    alt={type.label}
-                    width={16}
-                    height={16}
-                    className="h-4 w-4"
-                  />
+                  <Image src={type.iconPath} alt="" width={16} height={16} className="h-4 w-4" />
                   <span>{type.label}</span>
                 </button>
               );
@@ -118,14 +189,28 @@ export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
           </div>
         </div>
 
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          共 {filtered.length.toLocaleString()} 隻寶可夢符合條件。
-        </p>
-      </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p role="status" className="text-sm text-slate-600 dark:text-slate-300">
+            共 {filtered.length.toLocaleString()} 筆型態樣本符合條件。
+          </p>
+          <button
+            type="button"
+            onClick={() => updateFilters({ search: '', typeFilter: null, onlyLegendary: false })}
+            disabled={!search && !typeFilter && !onlyLegendary}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-40 dark:border-slate-600"
+          >
+            清除篩選
+          </button>
+        </div>
+      </fieldset>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((pokemon) => (
-          <PokemonCard key={`${pokemon.id}-${pokemon.name}`} pokemon={pokemon} />
+          <PokemonCard
+            key={`${pokemon.id}-${pokemon.formId ?? pokemon.name}`}
+            pokemon={pokemon}
+            returnTo={pokemonListHref(filters)}
+          />
         ))}
         {filtered.length === 0 ? (
           <div className="col-span-full rounded-lg border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -139,13 +224,17 @@ export function PokemonList({ pokemons, typeOptions }: PokemonListProps) {
 
 type PokemonCardProps = {
   pokemon: PokemonDetailEntryViewModel;
+  returnTo: string;
 };
 
-function PokemonCard({ pokemon }: PokemonCardProps) {
+function PokemonCard({ pokemon, returnTo }: PokemonCardProps) {
   const progressGradient = `linear-gradient(90deg, ${pokemon.accentColor} 0%, var(--chart-1) 100%)`;
 
   return (
-    <Card className="h-full border border-slate-200/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800">
+    <Card
+      id={pokemonCardAnchor(pokemon)}
+      className="h-full scroll-mt-24 border border-slate-200/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800"
+    >
       <CardHeader className="gap-4 pb-2">
         <div className="flex gap-4">
           <div className="relative aspect-square w-24 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
@@ -209,7 +298,12 @@ function PokemonCard({ pokemon }: PokemonCardProps) {
             </span>
           </div>
           <Link
-            href={`/pokemon/${pokemon.id}`}
+            href={pokemonDetailReturnHref(
+              pokemon.detailHref ?? `/pokemon/${pokemon.id}`,
+              returnTo,
+              pokemonCardAnchor(pokemon),
+            )}
+            aria-label={`查看 ${pokemon.name} 詳情`}
             className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
           >
             查看詳情 →

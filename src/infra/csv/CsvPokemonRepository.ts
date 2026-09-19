@@ -14,7 +14,12 @@ export class CsvPokemonRepository implements PokemonRepository {
 
   async findBy(query: PokemonQuery): Promise<readonly Pokemon[]> {
     const pokemons = await this.loadAll();
-    return pokemons.filter((pokemon) => (query.includeLegendaries ? true : !pokemon.isLegendary));
+    return pokemons.filter(
+      (pokemon) =>
+        (query.includeLegendaries || !pokemon.isLegendary) &&
+        (query.id === undefined || pokemon.id === query.id) &&
+        (query.formId === undefined || pokemon.formId === query.formId),
+    );
   }
 
   private async loadAll(): Promise<readonly Pokemon[]> {
@@ -28,6 +33,14 @@ export class CsvPokemonRepository implements PokemonRepository {
 
     const rows = await readCsvFile(absolutePath);
     const pokemons = rows.map((row, index) => CsvPokemonMapper.toDomain(row, index));
+    const identities = new Set<string>();
+    for (const pokemon of pokemons) {
+      const identity = `${pokemon.id}/${pokemon.formId}`;
+      if (identities.has(identity)) {
+        throw new Error(`Duplicate Pokemon form identity: ${identity}`);
+      }
+      identities.add(identity);
+    }
     this.cache = pokemons;
     return pokemons;
   }

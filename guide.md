@@ -1,6 +1,6 @@
 # 開發指南
 
-這份指南說明現有程式如何運作，以及改動時應追蹤的邊界。用途、啟動指令與資料總覽見 [README](README.md)，未實作的建議集中於 [ROADMAP](ROADMAP.md)。以下依 2026-09-19 的本機程式碼整理，未重新執行應用或測試。
+這份指南說明現有程式如何運作，以及改動時應追蹤的邊界。用途、啟動指令與資料總覽見 [README](README.md)，工作狀態集中於 [ROADMAP](ROADMAP.md)。以下隨 2026-09-19 第一批實作更新。
 
 ## 1. 從哪裡開始讀
 
@@ -38,14 +38,14 @@ flowchart TD
 | `GetAveragePokemonStatsByTypeUseCase` | 各屬性的樣本數及六項平均；雙屬性同時計入兩組 |
 | `GetPokemonBaseStatsUseCase` | 每筆資料的編號、名稱、屬性、傳說狀態與原始能力值 |
 
-三個 UseCase 都支援 `excludeLegendaries`。Repository 的查詢介面目前只有是否包含傳說的條件，沒有單筆、名稱、型態或分頁查詢。
+三個 UseCase 都支援 `excludeLegendaries`。Repository 查詢可追加 `id` 與 `formId`；`GetPokemonBaseStatsUseCase.executeForForm` 取得指定型態或舊網址的預設型態。尚無分頁查詢。
 
 ## 3. Domain 與資料語意
 
 - `Pokemon` 驗證編號為正整數、名稱與主屬性非空；副屬性可為 `null`。
 - `BaseStats.create` 驗證原始能力為 1～255 的整數。`zero`、`add`、`div` 提供加總與平均的中間結果，這些結果不套用相同的原始能力限制。
 - `StatsAverager` 對六項能力做算術平均，空集合回傳全零結果。
-- CSV 的 `Number` 是圖鑑編號，不是每筆型態資料的唯一鍵。現有 Entity 沒有獨立型態識別欄位。
+- CSV 的 `Number` 是圖鑑編號，與 `formId` 共同構成型態身份。`formId` 由英文名稱正規化為 slug，不使用 CSV 列位置；同編號下的身份碰撞會在 Repository 載入時報錯。
 - 平均值以 CSV 每列為一筆，不先依編號去重；是否要提供「只看基本型態」目前仍是產品待辦。
 
 Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`Att`、`Def`、`Spa`、`Spd`、`Spe`。它不讀取 CSV 的能力總和或相剋欄位：總和由 ViewModel 計算，相剋使用程式內的矩陣。
@@ -54,10 +54,12 @@ Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`At
 
 頁面通常由 Server Component 呼叫 Presenter，再將可序列化的 ViewModel 傳給 Client Component。資料讀取使用 Node.js 檔案系統，現有架構需要可讀取 `data` 與 `public/img` 的伺服器環境；目前沒有 API Route 或獨立後端服務。
 
+首頁及圖鑑明確設定動態呈現，避免正式建置把 CSV 資料固定在建置時；切換 `POKEMON_DATA_PATH` 後重新啟動服務即可套用同一份資料。篩選控制在瀏覽器完成初始化前保持停用，避免較慢載入時輸入遺失。
+
 | 互動 | 狀態位置與更新方式 |
 | --- | --- |
 | 排除傳說 | URL 的 `excludeLegendaries`，透過 `router.replace` 重新載入伺服器資料；接受 `1`、`true`、`yes` |
-| 圖鑑關鍵字、屬性、只看傳說 | Client Component 的 React state，在已載入的完整列表中篩選；重新整理不保留 |
+| 圖鑑關鍵字、屬性、只看傳說 | URL 的 `q`、`type`、`legendary=1`，在已載入的完整列表中篩選；刷新、分享與上一頁／下一頁會還原 |
 | 直條圖的比較能力 | React state，依選取能力由高到低排序 |
 | 散佈圖的 X/Y 軸、屬性圖例與框選 | React state；圖例篩選只依主屬性 |
 | 散佈圖縮放 | D3 zoom 與 ref；按鈕縮放、中鍵平移，框選使用 D3 brush |
@@ -70,13 +72,16 @@ Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`At
 
 ## 5. 圖鑑與屬性相剋
 
-`loadPokemonDetailPageViewModel` 會取得所有能力資料，為每筆建立圖片路徑、能力條、總和與兩組相剋結果。列表與詳細頁共用這份完整 ViewModel；詳細頁與 metadata 目前分別載入後再以編號找第一筆，沒有專用的單筆查詢。
+列表的 `loadPokemonDetailPageViewModel` 仍會為所有資料建立完整 ViewModel，簡化卡片資料與分段載入留待 #19。詳細頁及 metadata 共用 `loadPokemonFormViewModel`，只為目標型態組裝詳細相剋，同時保留整份資料的能力最大值刻度。
+
+型態網址例如 `/pokemon/6?form=mega-charizard-x`。名稱相同且 CSV 重排時網址不變；名稱若改名則需另行處理舊 slug 的轉址。舊 `/pokemon/6` 依同編號中最短名稱、再按名稱排序選定預設型態，預設 CSV 會得到 Charizard；這是穩定的退回策略，不宣稱能辨識任意來源的基本型態。非法編號、格式錯誤或不存在的明示型態顯示找不到資料。
+
+圖鑑詳細連結附帶受限制的 `returnTo`，保留篩選條件及原卡片錨點；詳細頁的返回入口只接受本網站圖鑑路徑與已知參數。直接開啟詳細頁時返回完整圖鑑。
 
 目前相剋計算：
 
 - 防禦：對每種攻擊屬性，將它對寶可夢主、副屬性的倍率相乘。
-- 攻擊：嘗試從自身主、副屬性的攻擊中取較高倍率，目標只有單一屬性，未計入其他戰鬥條件。
-- 已知問題：攻擊端 `reduce` 初值是 `1`，結果永遠不低於 `1`，因此抗性與免疫會被顯示成等倍。修正前不可將此區當作正確的完整對戰判斷。
+- 攻擊：從自身主、副屬性的攻擊中取較高倍率，保留 0× 免疫與 0.5× 抗性；目標只有單一屬性，不含本系加成、特性、道具及實際招式配置。
 
 圖片查找透過掃描 `public/img` 建立編號到檔名的快取。目前只解析檔名前三位數，且同編號只保留第一個找到的檔案；它無法可靠區分型態，四位數編號也會被錯誤辨識。缺檔或讀取失敗時回傳 `null`，由頁面顯示佔位內容。
 
@@ -103,6 +108,6 @@ Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`At
 
 Vitest 設定使用 jsdom、Testing Library 與 `tests/setup.ts`。測試分布在 `tests/domain`、`tests/application`、`tests/infra`、`tests/server`、`tests/app/pokemon`；共用資料在 `tests/factories`、`tests/stubs`。目前沒有獨立的 `tests/integration` 目錄。
 
-Playwright 設定使用 Chromium、Firefox、WebKit，預設可啟動 `yarn dev`，但 `tests/e2e` 目錄與案例尚未建立。設定存在不等於流程已被驗證。
+Playwright 設定使用 Chromium、Firefox、WebKit，預設可啟動 `yarn dev`。`tests/e2e` 驗證公開頁面與網址；Vitest 排除這些瀏覽器案例。自訂 CSV 必須搭配重新啟動服務，避免沿用 Repository 快取。
 
-本次僅更新文件，保留測試檔、測試設定、fixture 與套件指令原樣；沒有重跑測試或取得新的通過／覆蓋率結果。後續工作建議與手動驗收條件見 [ROADMAP](ROADMAP.md)。
+使用者已授權需求確定後調整對應測試。第一批的環境、指令及驗收結果見 [驗收紀錄](docs/verification/roadmap-batch-1.md)；後續工作見 [ROADMAP](ROADMAP.md)。

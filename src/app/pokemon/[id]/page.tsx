@@ -1,11 +1,11 @@
 import { arc } from 'd3-shape';
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 
-import { loadPokemonDetailPageViewModel } from '../presenter';
+import { PokemonListReturnLink } from '../components/PokemonListReturnLink';
+import { loadPokemonFormViewModel } from '../presenter';
 
 import type {
   PokemonDetailEntryViewModel,
@@ -47,29 +47,30 @@ const MATCHUP_RING_COLOR_MAP: Record<MatchupIntent, Record<PokemonTypeMatchupCat
 
 type PokemonDetailRouteProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ form?: string | string[]; returnTo?: string | string[] }>;
 };
 
-export async function generateMetadata({ params }: PokemonDetailRouteProps) {
-  const resolvedParams = await params;
-  const id = Number.parseInt(resolvedParams.id, 10);
+async function loadRoutePokemon({ params, searchParams }: PokemonDetailRouteProps) {
+  const [{ id: rawId }, query] = await Promise.all([params, searchParams]);
+  const id = Number(rawId);
+  const formId = query?.form;
+  if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(id) || id <= 0) return null;
+  if (
+    formId !== undefined &&
+    (typeof formId !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(formId))
+  )
+    return null;
+  return loadPokemonFormViewModel(id, formId);
+}
 
-  if (!Number.isInteger(id)) {
-    return {
-      title: '寶可夢資料',
-      description: '瀏覽每隻寶可夢的基礎能力值與屬性。',
-    };
-  }
-
-  const viewModel = await loadPokemonDetailPageViewModel();
-  const pokemon = viewModel.pokemons.find((entry) => entry.id === id);
-
+export async function generateMetadata(props: PokemonDetailRouteProps) {
+  const pokemon = await loadRoutePokemon(props);
   if (!pokemon) {
     return {
       title: '寶可夢資料',
       description: '瀏覽每隻寶可夢的基礎能力值與屬性。',
     };
   }
-
   const paddedId = pokemon.id.toString().padStart(3, '0');
   return {
     title: `${pokemon.name} #${paddedId}｜寶可夢資料`,
@@ -77,20 +78,10 @@ export async function generateMetadata({ params }: PokemonDetailRouteProps) {
   };
 }
 
-export default async function PokemonDetailRoute({ params }: PokemonDetailRouteProps) {
-  const resolvedParams = await params;
-  const id = Number.parseInt(resolvedParams.id, 10);
-
-  if (!Number.isInteger(id)) {
-    notFound();
-  }
-
-  const viewModel = await loadPokemonDetailPageViewModel();
-  const pokemon = viewModel.pokemons.find((entry) => entry.id === id);
-
-  if (!pokemon) {
-    notFound();
-  }
+export default async function PokemonDetailRoute(props: PokemonDetailRouteProps) {
+  const [pokemon, searchParams] = await Promise.all([loadRoutePokemon(props), props.searchParams]);
+  if (!pokemon) notFound();
+  const returnTo = typeof searchParams?.returnTo === 'string' ? searchParams.returnTo : undefined;
 
   const paddedId = pokemon.id.toString().padStart(3, '0');
   const hasMatchups = pokemon.defenseMatchups.length > 0 || pokemon.offenseMatchups.length > 0;
@@ -98,9 +89,7 @@ export default async function PokemonDetailRoute({ params }: PokemonDetailRouteP
   return (
     <section className="space-y-8">
       <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-        <Link href="/pokemon" className="font-semibold hover:text-slate-900 dark:hover:text-white">
-          ← 回到列表
-        </Link>
+        <PokemonListReturnLink returnTo={returnTo} />
         <span aria-hidden="true">/</span>
         <span className="text-slate-500">#{paddedId}</span>
       </div>
@@ -186,7 +175,7 @@ export default async function PokemonDetailRoute({ params }: PokemonDetailRouteP
           <CardHeader className="pb-0">
             <CardTitle className="text-xl">屬性弱點倍率表</CardTitle>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              以環狀圖呈現此寶可夢的屬性相剋關係，左側為承受攻擊時的倍率，右側為主屬性攻擊他人時的倍率。
+              內環為承受攻擊時的倍率；外環為自身屬性招式對單一目標屬性的最佳相剋倍率。
             </p>
           </CardHeader>
           <CardContent className="pt-4">
@@ -251,7 +240,7 @@ function TypeMatchupPanel({ defenseMatchups, offenseMatchups }: TypeMatchupPanel
         />
         <MatchupDetailList
           title="攻擊方"
-          description="此寶可夢本系招式攻擊他人時可造成的倍率"
+          description="自身屬性招式對單一目標屬性的最佳相剋倍率；不含本系加成、特性、道具與實際招式配置。"
           matchups={offenseMatchups}
           intent="offense"
         />
@@ -271,17 +260,20 @@ function MatchupDetailList({ title, description, matchups, intent }: MatchupDeta
   const textClassMap = MATCHUP_TEXT_CLASS_MAP[intent];
 
   return (
-    <div className="space-y-3 rounded-2xl border border-slate-200/70 bg-white/60 p-4 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/30">
+    <section
+      aria-label={title}
+      className="space-y-3 rounded-2xl border border-slate-200/70 bg-white/60 p-4 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/30"
+    >
       <div>
         <p className="text-base font-semibold text-slate-900 dark:text-white">{title}</p>
         <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
       </div>
-      <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-        {matchups.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">尚無對應資料。</p>
-        ) : (
-          matchups.map((matchup) => (
-            <div
+      {matchups.length === 0 ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">尚無對應資料。</p>
+      ) : (
+        <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
+          {matchups.map((matchup) => (
+            <li
               key={`${intent}-${matchup.slug}`}
               className="flex items-center justify-between rounded-xl border border-slate-200/70 bg-white px-3 py-2 text-sm dark:border-slate-800/60 dark:bg-slate-950/30"
             >
@@ -301,11 +293,11 @@ function MatchupDetailList({ title, description, matchups, intent }: MatchupDeta
               <span className={`text-base font-bold ${textClassMap[matchup.category]}`}>
                 {matchup.multiplierLabel}×
               </span>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

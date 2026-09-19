@@ -1,5 +1,7 @@
 export interface PokemonQuery {
   includeLegendaries: boolean;
+  id?: number;
+  formId?: string;
 }
 
 export const PokemonQueries = {

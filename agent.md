@@ -13,7 +13,7 @@
 - Next.js 15.4.6 App Router、React 19.1.0、TypeScript 5、D3 7、Tailwind CSS 4、shadcn/ui、Radix Tooltip、next-themes。
 - Yarn 4.9.4，實際使用 `node_modules`，不是 Plug'n'Play。
 - `/chart` 提供雷達、依屬性平均直條圖、單一可切換軸的互動散佈圖。
-- `/pokemon` 提供搜尋與篩選；`/pokemon/[id]` 提供能力及相剋雙環圖；`/` 主要內容尚空白。
+- `/pokemon` 提供網址同步的搜尋與篩選；`/pokemon/[id]?form=...` 提供指定型態的能力及相剋雙環圖；`/` 提供網站介紹及兩個主要入口。
 - 沒有 API Route、外部即時資料服務或資料庫。
 
 ## 重要邊界
@@ -29,11 +29,12 @@
 - CSV 有 1,032 筆、898 個圖鑑編號；同編號可能有不同型態，編號不可視為每列唯一鍵。
 - 統計以每列為樣本，雙屬性同時計入兩個平均分組。散佈圖圖例只按主屬性篩選。
 - `POKEMON_DATA_PATH` 優先於測試 fixture 及預設 CSV；資料首次查詢時讀取並快取。
-- 相剋不是取自 CSV，也不是完整傷害計算；攻擊倍率的下限問題尚未修正。
-- 詳細頁目前只選同編號第一筆；圖片查找也尚未支援可靠的型態識別及四位數編號。細節與處理順序見 ROADMAP。
+- 相剋不是取自 CSV，也不是完整傷害計算；攻擊取自身屬性招式對單一目標屬性的最佳倍率，保留免疫與抗性。
+- 型態身份由圖鑑編號與穩定的 `formId` 組成，網址不可使用 CSV 列索引；碰撞會明確報錯。
+- 圖片查找尚未支援可靠的型態識別及四位數編號。細節與後續工作見 ROADMAP。
 
 ## 驗證與本次範圍
 
-Vitest 現有 18 個測試檔；Playwright 只有設定，尚無 E2E 案例。`yarn test:unit` 一次執行 Vitest；`yarn test` 通常進入監看模式。沒有獨立 `tests/integration` 目錄。
+`yarn test:unit` 一次執行 Vitest；`yarn test` 通常進入監看模式。Playwright 案例位於 `tests/e2e`，由 `yarn test:e2e` 執行，並從 Vitest 探索範圍排除。
 
-本輪使用者要求先整理文件及提出下一步，測試先不要改；因此只調整 Markdown 文件，不更動程式、測試、fixture、設定或依賴，也不執行實作待辦。本次未重新執行網站或測試，不得宣稱目前檢查全部通過。後續任務依使用者最新授權決定範圍。
+使用者已授權需求確定後隨功能調整測試、fixture 與必要設定，取代先前文件整理階段的「測試先不要改」。第一批實作範圍為 #14、#15、#17、#18；驗收以頁面與公開網址為主，結果見 [驗收紀錄](docs/verification/roadmap-batch-1.md)。票券位於 [GitHub Issues](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues)。

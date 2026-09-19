@@ -33,12 +33,13 @@ vi.mock('@/app/pokemon/components/PokemonList', () => ({
 
 vi.mock('@/app/pokemon/presenter', () => ({
   loadPokemonDetailPageViewModel: vi.fn(),
+  loadPokemonFormViewModel: vi.fn(),
 }));
 
 import PokemonDetailRoute, { generateMetadata } from '@/app/pokemon/[id]/page';
 import { PokemonList } from '@/app/pokemon/components/PokemonList';
 import PokemonPage from '@/app/pokemon/page';
-import { loadPokemonDetailPageViewModel } from '@/app/pokemon/presenter';
+import { loadPokemonDetailPageViewModel, loadPokemonFormViewModel } from '@/app/pokemon/presenter';
 import type {
   PokemonDetailEntryViewModel,
   PokemonDetailPageViewModel,
@@ -109,7 +110,7 @@ describe('Pokemon pages', () => {
     render(await PokemonPage());
 
     expect(screen.getByText('個別寶可夢資料')).toBeInTheDocument();
-    expect(screen.getByText(/收錄 2 隻寶可夢/)).toBeInTheDocument();
+    expect(screen.getByText(/收錄 2 筆型態樣本，涵蓋 2 個不同圖鑑編號/)).toBeInTheDocument();
     expect(screen.getByTestId('pokemon-list-mock')).toBeInTheDocument();
     expect(PokemonList).toHaveBeenCalledWith(
       {
@@ -122,7 +123,7 @@ describe('Pokemon pages', () => {
 
   it('generates metadata for specific pokemon and uses fallback for invalid ids', async () => {
     const viewModel = buildViewModel();
-    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(viewModel);
+    (loadPokemonFormViewModel as Mock).mockResolvedValue(viewModel.pokemons[0]);
 
     const metadata = await generateMetadata({ params: Promise.resolve({ id: '1' }) });
     expect(metadata.title).toContain('Alpha');
@@ -134,7 +135,7 @@ describe('Pokemon pages', () => {
 
   it('renders PokemonDetailRoute with pokemon data and image', async () => {
     const viewModel = buildViewModel();
-    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(viewModel);
+    (loadPokemonFormViewModel as Mock).mockResolvedValue(viewModel.pokemons[0]);
 
     render(await PokemonDetailRoute({ params: Promise.resolve({ id: '1' }) }));
 
@@ -151,7 +152,7 @@ describe('Pokemon pages', () => {
   it('renders fallback text when pokemon image is missing', async () => {
     const viewModel = buildViewModel();
     viewModel.pokemons = [{ ...viewModel.pokemons[0], id: 3, name: 'Gamma', imagePath: null }];
-    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(viewModel);
+    (loadPokemonFormViewModel as Mock).mockResolvedValue(viewModel.pokemons[0]);
 
     render(await PokemonDetailRoute({ params: Promise.resolve({ id: '3' }) }));
 
@@ -165,7 +166,7 @@ describe('Pokemon pages', () => {
     );
     expect(notFoundMock).toHaveBeenCalledTimes(1);
 
-    (loadPokemonDetailPageViewModel as Mock).mockResolvedValue(buildViewModel());
+    (loadPokemonFormViewModel as Mock).mockResolvedValue(null);
     await expect(PokemonDetailRoute({ params: Promise.resolve({ id: '999' }) })).rejects.toThrow(
       'NEXT_NOT_FOUND',
     );

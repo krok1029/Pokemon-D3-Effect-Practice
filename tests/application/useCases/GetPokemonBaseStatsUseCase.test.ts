@@ -50,6 +50,7 @@ describe('GetPokemonBaseStatsUseCase', () => {
       {
         id: 25,
         name: 'Pikachu',
+        formId: 'pikachu',
         isLegendary: false,
         primaryType: 'electric',
         secondaryType: null,
@@ -65,6 +66,7 @@ describe('GetPokemonBaseStatsUseCase', () => {
       {
         id: 150,
         name: 'Mewtwo',
+        formId: 'mewtwo',
         isLegendary: true,
         primaryType: 'psychic',
         secondaryType: null,
