@@ -1,132 +1,96 @@
 # Pokemon D3 Effect
 
-互動式 Pokémon 資料視覺化儀表板，結合 Next.js App Router 與 D3.js 呈現 CSV 資料。專案採用精簡版 DDD 分層與 DI 管理，方便擴充與測試。
+寶可夢圖鑑與互動資料視覺化網站。透過本機 CSV 查詢個別寶可夢，並用 D3 比較六項基礎能力、各屬性平均值與能力分布。
+
+本文件於 2026-09-19 對照本機程式碼整理；整理前最新提交為 `e35db87`（2025-11-22，`feat: ring`）。功能清單代表已有實作，不代表本次已完成執行驗證。
+
+## 目前功能
+
+| 路徑 | 功能 |
+| --- | --- |
+| `/chart` | 全體能力平均、雷達圖、依屬性比較的直條圖、可選擇兩項能力的散佈圖；可排除傳說寶可夢 |
+| `/pokemon` | 依英文名稱或編號搜尋、依任一屬性篩選、只顯示傳說；卡片含圖片、能力值及總和 |
+| `/pokemon/[id]` | 個別資料、能力條、攻擊／防禦相剋列表與雙環圖 |
+| `/` | 共用頁首與頁尾已存在，首頁主要內容仍為空白 |
+
+散佈圖支援主屬性圖例篩選、拖曳框選、選取結果清單、縮放按鈕與滑鼠中鍵平移。縮放範圍由元件的 `scaleExtent` 定義，目前是 0.5～4 倍；滑鼠滾輪縮放刻意停用。
 
 ## 快速開始
 
-### 先決條件
-- Node.js 18.18+（Next.js 15 相容版本）
-- Yarn 4（專案使用 Plug'n'Play；建議 `corepack enable` 讓 Node 管理 Yarn）
+專案指定 Yarn 4.9.4，並透過 `.yarnrc.yml` 使用 `node_modules` 模式。沒有鎖定 Node.js 版本檔或 `engines` 欄位；重啟開發時應記錄實際使用的 Node.js 版本與啟動結果。
 
-### 安裝與啟動
+在專案根目錄執行：
+
 ```bash
-corepack enable          # 第一次使用 Yarn 4 時需要
-yarn install              # 安裝依賴
-yarn dev                  # 啟動開發伺服器，預設 http://localhost:3000
+# 已有 Yarn 4 時可直接安裝；若使用 Corepack 管理 Yarn，可先執行 corepack enable。
+yarn install
+yarn dev
 ```
 
-## 常用指令
-- `yarn dev`：啟動開發模式（熱重載）
-- `yarn build` / `yarn start`：建置並啟動正式環境
-- `yarn lint`：執行 ESLint 檢查
-- `yarn typecheck`：跑 TypeScript 型別檢查
-- `yarn test`：執行 Vitest 單元與整合測試
-- `yarn test:e2e`：執行 Playwright E2E 測試（首次前需 `npx playwright install`）
-- `yarn coverage`：產出測試覆蓋率報告
+啟動後先開啟 [圖表頁](http://localhost:3000/chart) 或 [圖鑑頁](http://localhost:3000/pokemon)。目前首頁沒有內容。
 
-## 資料夾導覽
+| 指令 | 用途 |
+| --- | --- |
+| `yarn dev` | 啟動 Next.js 開發伺服器 |
+| `yarn build` / `yarn start` | 建置／啟動正式環境 |
+| `yarn lint` | ESLint 檢查 |
+| `yarn typecheck` | TypeScript 型別檢查 |
+| `yarn test` | Vitest，一般本機執行時進入監看模式 |
+| `yarn test:unit` | 一次執行目前由 Vitest 探索到的測試 |
+| `yarn coverage` | 執行 Vitest 並產出覆蓋率 |
+| `yarn test:e2e` | Playwright 入口；目前尚無 `tests/e2e` 案例 |
 
-```
-src
-├─ app/                         # Next.js App Router / Presenter 層
-│  ├─ (routes)/chart/           # Chart route 的 Server Component + Presenter + ViewModel
-│  │  ├─ ChartPage.tsx
-│  │  ├─ page.tsx
-│  │  ├─ presenter.ts
-│  │  └─ view-models/
-│  │     └─ averageStatsViewModel.ts
-│  ├─ components/               # UI 元件（dashboard / charts / ui）
-│  ├─ layout.tsx                # 全域佈局與 ThemeProvider
-│  └─ page.tsx, pokemon/ 等頁面
-│
-├─ core/                        # Application + Domain（DDD 核心）
-│  ├─ application/
-│  │  ├─ dto/                   # UseCase 輸出 DTO
-│  │  └─ useCases/              # Application Service（e.g. GetAveragePokemonStatsUseCase）
-│  └─ domain/
-│     ├─ entities/              # 聚合根與實體
-│     ├─ repositories/          # Domain Port（介面）
-│     ├─ services/              # Domain Service（純邏輯）
-│     ├─ specifications/        # 查詢條件 / 規範
-│     └─ valueObjects/          # 值物件（具不變式）
-│
-├─ infra/                       # 基礎建設層，連結外部資源
-│  ├─ config/                   # 環境設定提供者
-│  └─ csv/                      # CSV Repository 與 Mapper
-│
-├─ di/tokens.ts                 # tsyringe 依賴注入 Token 定義
-├─ server/container.ts          # 依賴註冊（Repository、UseCase）
-├─ server/factories.ts          # 建立 UseCase 等服務的工廠
-├─ server/useCases.ts           # 提供取得 UseCase 的封裝函式
-└─ tests/                       # Vitest 測試（domain / infra / integration）
+## 資料與統計口徑
+
+預設資料為 [data/pokemonCsv.csv](data/pokemonCsv.csv)。目前包含 **1,032 筆資料、898 個圖鑑編號（1～898）**；相同編號可能有 Mega 或地區型態。CSV 標記為傳說的資料有 125 筆，排除後為 907 筆。
+
+- 平均值以每筆 CSV 資料為一個樣本，沒有依圖鑑編號去重。
+- 依屬性平均時，雙屬性資料同時參與兩個屬性分組；各組樣本數不可直接加總成物種數。
+- 圖鑑的屬性篩選會比對主、副屬性；散佈圖的顏色與圖例篩選只使用主屬性。
+- 核心模型目前只載入編號、英文名稱、主副屬性、傳說標記及六項能力。CSV 的世代、特性、身高、體重等欄位尚未提供給頁面。
+- 相剋資料來自 ViewModel 內的固定矩陣，沒有使用 CSV 的 `Against ...` 欄位，也沒有納入特性、招式、道具等戰鬥條件。
+- 圖片使用 `public/img` 本機資源；圖片檔的涵蓋範圍與 CSV 不完全相同，不代表所有圖檔都有對應資料。
+
+資料來源由 `ConfigProvider` 決定，優先順序是 `POKEMON_DATA_PATH` → 測試環境的 `data/pokemon_fixture_30.csv` → 預設 CSV。相對路徑以專案執行目錄為基準：
+
+```bash
+POKEMON_DATA_PATH=/absolute/path/to/pokemon.csv yarn dev
 ```
 
-## 架構與資料流
-- **App layer**：Next.js Server Component/Presenter 層，僅透過 UseCase 取得 DTO，再轉為 View Model 呈現。
-- **Application layer**：UseCase 僅依賴 Domain Port，協調流程並回傳 DTO。
-- **Domain layer**：實體、值物件、Domain Service 與 Repository Port，不引用任何外部技術。
-- **Infra layer**：實作 Domain Port（例如 CSV Repository），負責 Anti-Corruption 映射與環境設定。
-- **資料流**：UI / Routes → Presenter → UseCase（core/application）→ Repository Port（core/domain）→ CSV Adapter（infra）→ Domain 實體 → DTO → View Model → UI render。
+資料首次查詢時讀入 Repository 記憶體快取；目前沒有自動重新載入機制。更新 CSV 或環境變數後，重新啟動服務。
 
-```mermaid
-flowchart TD
-  subgraph App[App 層 - Next.js]
-    Page[ChartPage<br/>Server Component]
-    Presenter[presenter.ts<br/>loadAverageStatsViewModel]
-    ViewModel[averageStatsViewModel.ts]
-  end
+## 技術與架構
 
-  subgraph Server[Server 組態]
-    Container[container.ts]
-    Tokens[di/tokens.ts]
-    Factories[factories.ts]
-  end
+目前宣告的主要版本為 Next.js 15.4.6、React 19.1.0、TypeScript 5、D3 7、Tailwind CSS 4、Yarn 4.9.4。介面使用 shadcn/ui、Radix Tooltip 與 next-themes；CSV 使用 csv-parse；依賴注入使用 tsyringe 與 reflect-metadata。精確套件宣告與鎖定結果以 `package.json`、`yarn.lock` 為準。
 
-  subgraph Core[Core 層]
-    subgraph Application[Application]
-      UC[GetAveragePokemonStatsUseCase<br/>DTO]
-    end
-    subgraph Domain[Domain]
-      RepoPort[PokemonRepository<br/>Port]
-      Svc[StatsAverager<br/>Domain Service]
-      Entities[Pokemon<br/>BaseStats]
-      Spec[PokemonQuery]
-    end
-  end
-
-  subgraph Infra[Infra 層]
-    Config[ConfigProvider]
-    CsvRepo[CsvPokemonRepository]
-    Mapper[CsvPokemonMapper]
-    Data[(pokemonCsv.csv)]
-  end
-
-  Page --> Presenter --> UC
-  Presenter --> ViewModel
-  UC --> RepoPort
-  UC --> Svc
-  RepoPort --> CsvRepo
-  CsvRepo --> Mapper --> Data
-  Container --> Tokens
-  Container --> Factories
-  Container --> CsvRepo
-  Container --> UC
-  Container --> Svc
-  Container --> Config
-  Config -. 提供路徑 .-> CsvRepo
+```text
+src/
+├── app/                       頁面、Presenter、ViewModel、React / D3 元件
+│   ├── (routes)/chart/         統計頁與圖表元件
+│   ├── pokemon/               圖鑑列表、詳細頁、圖片查找及相剋 ViewModel
+│   └── components/            共用 UI 與 ThemeProvider
+├── core/
+│   ├── application/           UseCase 與 DTO
+│   ├── domain/                實體、值物件、平均計算、Repository 介面
+│   └── shared/                目前為 cn 樣式工具，屬待整理的 UI 依賴
+├── infra/                     CSV 解析、映射與資料來源設定
+├── server/                    DI 組裝與 UseCase 存取入口
+└── di/                        DI token
+data/                          正式 CSV 與 30 筆測試 fixture
+public/                        寶可夢圖片、18 種屬性圖示與其他靜態資源
+tests/                         Vitest 案例與共用測試工具
 ```
 
-## CSV 資料來源
-- 預設資料：`data/pokemonCsv.csv`
-- 測試情境使用：`data/pokemon_fixture_30.csv`
-- 自訂資料：設定環境變數 `POKEMON_DATA_PATH=/abs/path/to/your.csv`，系統會在啟動時載入指定檔案。
+頁面透過 Presenter 呼叫 UseCase；UseCase 依賴 Repository 介面，由 CSV 實作供應 Domain 物件，再輸出 DTO。ViewModel 整理中文能力標籤、顏色與顯示格式，最後交由 React / D3 呈現。詳細流程及目前的分層例外見 [開發指南](guide.md)。
 
-## 測試與品質保證
-- Vitest 用於單元與整合測試，可於 `tests/domain`、`tests/application`、`tests/infra` 與 `tests/integration` 找到對應案例，方便追蹤各層責任。
-- Playwright 覆蓋端到端流程，建議在本機執行前安裝瀏覽器相依（`npx playwright install`）。
-- CI 建議串連 `yarn lint`、`yarn typecheck`、`yarn test` 以確保品質。
+## 現況與下一步
 
-## 開發筆記
-- 專案使用 tsyringe 管理 DI，若新增 repository 或 UseCase，記得在 `src/server/container.ts` 註冊並同步更新 `TOKENS`。
-- D3 視覺化元件位於 `src/app/components/charts`；視覺元素與資料載入分離（`sections` vs `cards`）。
-- 新增 domain 邏輯時，務必針對 `tests/domain` 或 `tests/integration` 補齊測試以維持覆蓋率。
+目前有 18 個 Vitest 測試檔，涵蓋 Domain、UseCase、CSV、DI 及圖鑑頁面。Playwright 已設定 Chromium、Firefox、WebKit，但還沒有 E2E 案例。此次文件整理沒有執行測試、修改測試或宣告覆蓋率。
+
+目前已從程式碼確認的缺口包括：攻擊相剋倍率被下限 1 截斷、不同型態共用詳細頁編號、圖片查找只解析前三位數、首頁與部分導覽內容尚未完成。
+
+- [ROADMAP.md](ROADMAP.md)：待辦優先順序、原因與完成條件。
+- [guide.md](guide.md)：資料流程、互動狀態、分層及維護方式。
+- [agent.md](agent.md)：供後續維護者與代理快速接手的摘要。
+
+接下來先處理資料正確性與瀏覽流程，再考慮增加圖表或資料來源。

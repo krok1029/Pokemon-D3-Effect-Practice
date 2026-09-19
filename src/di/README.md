@@ -1,10 +1,9 @@
-# 依賴注入層說明
+# DI Token
 
-負責集中管理 tsyringe 使用的 Token。
+`tokens.ts` 集中定義 tsyringe 註冊與解析用的 Symbol，讓應用以穩定 token 取得依賴，不把容器細節放進核心邏輯。
 
-- `tokens.ts`：匯出所有註冊與解析服務所需的 Symbol（Repository、UseCase、Domain Service、設定值等）。
+目前包含 PokemonRepository、PokemonDataConfig、StatsAverager，以及全體平均、依屬性平均、個別能力三個 UseCase 的 token。
 
-使用方式：
-1. 新增需要透過 DI 解析的服務時，先在 `tokens.ts` 定義對應的 Token。
-2. 在 `src/server/container.ts` 中以該 Token 註冊實際實作。
-3. App 層透過 `src/server/useCases.ts` 等封裝函式取得服務，避免直接接觸容器。
+Token 只負責識別，實作及生命週期在 `src/server/container.ts` 決定，UseCase 建構在 `src/server/factories.ts`。App 經 `src/server/useCases.ts` 取得用例。
+
+新增需要獨立解析的服務時再新增 token；如果沿用既有服務，不需要額外建立 token。不要在 App 或 Domain 直接註冊／解析容器。

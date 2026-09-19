@@ -1,93 +1,108 @@
-# Pokemon D3 Effect 開發指南
+# 開發指南
 
-本指南補充 `README.md`，針對日常開發流程、程式碼分層與測試策略提供更深入的說明，協助新成員快速理解專案運作方式。
+這份指南說明現有程式如何運作，以及改動時應追蹤的邊界。用途、啟動指令與資料總覽見 [README](README.md)，未實作的建議集中於 [ROADMAP](ROADMAP.md)。以下依 2026-09-19 的本機程式碼整理，未重新執行應用或測試。
 
-## 1. 專案目標與技術棧
-- **目標**：以 Next.js App Router 建構互動式 Pokémon 資料儀表板，利用 D3.js 呈現 CSV 資料並維持良好可測性。
-- **前端**：Next.js 15、React 19、Tailwind 4、shadcn/ui、D3 7。
-- **後端/應用層**：精簡版 DDD（app / core / infra），以 tsyringe 注入依賴。
-- **測試**：Vitest（單元、整合）、Playwright（E2E）。
-- **工具**：TypeScript、ESLint、Prettier、Yarn 4（Plug'n'Play）。
+## 1. 從哪裡開始讀
 
-## 2. 分層架構與職責
-專案採用三層設計以維持關注點分離：
+| 想了解的部分 | 入口 |
+| --- | --- |
+| 圖表如何組成 | `src/app/(routes)/chart/ChartPage.tsx` |
+| 圖表資料如何取得 | `src/app/(routes)/chart/presenter.ts` |
+| 散佈圖互動 | `src/app/(routes)/chart/components/StatScatterMatrix.tsx` |
+| 圖鑑搜尋與篩選 | `src/app/pokemon/components/PokemonList.tsx` |
+| 詳細頁與相剋環形圖 | `src/app/pokemon/[id]/page.tsx` |
+| 相剋算法與詳細頁資料格式 | `src/app/pokemon/view-models/pokemonDetailViewModel.ts` |
+| CSV 如何轉成領域物件 | `src/infra/csv/CsvPokemonMapper.ts` |
+| 服務如何建立 | `src/server/container.ts` |
 
-### 2.1 App 層（Presenter + UI）
-- 位置：`src/app`
-- `app/(routes)/chart/` 等資料夾包含 Next.js Route（`page.tsx`）、Server Component（`ChartPage.tsx`）、Presenter（`presenter.ts`）與 View Model（`view-models/`）。
-- Presenter 專責呼叫 UseCase 並組裝 View Model；Server Component 僅消費 Presenter 輸出，不直接碰觸 Repository。
-- 共用 UI 元件與圖表仍集中於 `components/`，遵循「資料載入與呈現分離」原則。
+## 2. 查詢與呈現流程
 
-### 2.2 Core 層（Application + Domain）
-- 位置：`src/core`
-- **application**：`application/useCases/` 收納 UseCase（如 `GetAveragePokemonStatsUseCase`），回傳定義於 `application/dto/` 的 DTO，僅依賴 Domain Port。
-- **domain**：由 `entities/`、`valueObjects/`、`repositories/`（Port）、`services/`（Domain Service，例如 `StatsAverager`）、`specifications/` 組成，不得依賴 Infra/App。
-- Core 層是純 TypeScript 模組，可單獨被測試，亦能在未來替換資料來源或框架時重複使用。
+```mermaid
+flowchart TD
+    Page[Next.js Server Component] --> Presenter
+    Presenter --> Accessor[server/useCases.ts]
+    Accessor --> UseCase[Application UseCase]
+    UseCase --> Port[PokemonRepository 介面]
+    Port -. 由 DI 提供實作 .-> CSV[CsvPokemonRepository]
+    CSV --> Mapper[讀取 CSV 並映射 Pokemon / BaseStats]
+    UseCase --> DTO
+    DTO --> VM[ViewModel]
+    VM --> UI[React / D3]
+```
 
-### 2.3 Infra 層（基礎建設）
-- 位置：`src/infra`
-- `csv/` 內提供 `CsvPokemonRepository` 與 `CsvPokemonMapper`，作為 Domain Port 的具體實作與 Anti-Corruption Layer。
-- `config/ConfigProvider.ts` 統一輸出環境設定（如 `POKEMON_DATA_PATH`），避免各層直接讀取 `process.env`。
-- 所有外部整合（API、DB、CSV）皆應在此層實作並於 `server/container.ts` 註冊。
+統計頁使用 `Promise.all` 載入全體平均、依屬性平均與個別能力三組資料。它們共用同一個 Repository 實例，但快取只保存完成後的資料，尚未共用讀取中的 Promise；冷啟動的並行請求可能重複讀檔。
 
-## 3. 資料流與配置
-1. Next.js Route 的 Server Component 透過 Presenter 呼叫 UseCase。
-2. UseCase 透過 Domain Port (`PokemonRepository`) 取得資料，並使用 Domain Service (`StatsAverager`) 計算平均，最終回傳 DTO。
-3. Infra 層的 Repository 讀取 CSV（`readCsv`），經 `CsvPokemonMapper` 轉成 Domain 實體後回傳。
-4. Presenter 將 DTO 組裝成 View Model，再交由 Server Component / UI 元件渲染。
+| UseCase | 輸出 |
+| --- | --- |
+| `GetAveragePokemonStatsUseCase` | 筆數及六項能力平均，四捨五入到小數一位 |
+| `GetAveragePokemonStatsByTypeUseCase` | 各屬性的樣本數及六項平均；雙屬性同時計入兩組 |
+| `GetPokemonBaseStatsUseCase` | 每筆資料的編號、名稱、屬性、傳說狀態與原始能力值 |
 
-### 3.1 CSV 路徑
-- 預設使用 `data/pokemonCsv.csv`。
-- 測試環境會使用 `data/pokemon_fixture_30.csv`（由 `ConfigProvider` 提供）。
-- 若需改用其他 CSV，可設定環境變數 `POKEMON_DATA_PATH=/absolute/path/to/file.csv`。
+三個 UseCase 都支援 `excludeLegendaries`。Repository 的查詢介面目前只有是否包含傳說的條件，沒有單筆、名稱、型態或分頁查詢。
 
-## 4. 依賴注入與設定
-- DI token 定義於 `src/di/tokens.ts`，包含 Repository、UseCase、Domain Service、設定值等。
-- `src/server/container.ts` 撰寫組成根（Composition Root），註冊 `ConfigProvider`、`CsvPokemonRepository`、`StatsAverager` 與各 UseCase。
-- `src/server/useCases.ts`、`src/server/pokemonRepository.ts` 封裝 `container.resolve`，提供 App 層安全取得實例。
-- 新增 Repository / UseCase 時，請同步更新 `TOKENS` 與 container 註冊邏輯。
+## 3. Domain 與資料語意
 
-## 5. UI 與 D3 元件指南
-- 所有 UI 元件位於 `src/app/components`，依功能拆分：
-  - `dashboard`：儀表板 sections/cards。
-  - `charts`：D3 專用元件與輔助工具。
-  - `ui`：基於 shadcn/ui 的共用元件。
-- 將資料抓取放在 section（Server Component）中，將純展示邏輯放在 card（Client Component 或純函式）內，可有效分離資料責任。
-- 建議 chart 元件輸入為明確的資料結構（例如統計值或陣列），避免在元件內直接處理 repository。
+- `Pokemon` 驗證編號為正整數、名稱與主屬性非空；副屬性可為 `null`。
+- `BaseStats.create` 驗證原始能力為 1～255 的整數。`zero`、`add`、`div` 提供加總與平均的中間結果，這些結果不套用相同的原始能力限制。
+- `StatsAverager` 對六項能力做算術平均，空集合回傳全零結果。
+- CSV 的 `Number` 是圖鑑編號，不是每筆型態資料的唯一鍵。現有 Entity 沒有獨立型態識別欄位。
+- 平均值以 CSV 每列為一筆，不先依編號去重；是否要提供「只看基本型態」目前仍是產品待辦。
 
-## 6. 測試策略
-- **單元測試**：`tests/domain`、`tests/application`、`tests/infra`。透過 Vitest 驗證純函式與 UseCase 行為。
-- **整合測試**：`tests/integration`。從 UseCase 到 CSV 實作驗證實際資料讀取流程。
-- **E2E 測試**：`tests/e2e`。使用 Playwright 驗證主要使用者流程（例如首頁是否正確渲染卡片）。
-- 常用指令：
-  - `yarn test`：執行所有 Vitest 測試。
-  - `yarn coverage`：輸出覆蓋率。
-  - `yarn test:e2e`：執行 Playwright 測試（首次需 `npx playwright install` 安裝瀏覽器）。
+Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`Att`、`Def`、`Spa`、`Spd`、`Spe`。它不讀取 CSV 的能力總和或相剋欄位：總和由 ViewModel 計算，相剋使用程式內的矩陣。
 
-## 7. 開發流程建議
-1. 啟用 Yarn（一次性）：`corepack enable`。
-2. 安裝依賴：`yarn install`。
-3. 啟動開發伺服器：`yarn dev`（預設 http://localhost:3000）。
-4. 開發時善用 `yarn lint`、`yarn typecheck` 確保品質。
-5. 若修改資料或 UseCase，記得更新對應測試。
+## 4. App 層與互動狀態
 
-## 8. 擴充範例
-### 8.1 新增 UseCase
-1. 在 `src/core/application/useCases/` 新增 UseCase，依需求調用 Domain Port 並回傳 DTO。
-2. 若需對 CSV 讀取做調整，擴充 `src/infra/csv/CsvPokemonRepository.ts` 或新增新的 Adapter。
-3. 建立對應單元測試（application、domain），必要時補充整合測試。
-4. 在 app 層的 Server Component 中注入新的 UseCase 以呈現資料。
+頁面通常由 Server Component 呼叫 Presenter，再將可序列化的 ViewModel 傳給 Client Component。資料讀取使用 Node.js 檔案系統，現有架構需要可讀取 `data` 與 `public/img` 的伺服器環境；目前沒有 API Route 或獨立後端服務。
 
-### 8.2 新增圖表或卡片
-1. 新增資料讀取 section，於其中呼叫 UseCase。
-2. 將資料透過 props 傳入新的 card/chart 元件。
-3. chart 元件放在 `src/app/components/charts`，善用 TypeScript 型別描述資料輸入。
-4. 補充 Playwright 測試以驗證 UI 行為。
+| 互動 | 狀態位置與更新方式 |
+| --- | --- |
+| 排除傳說 | URL 的 `excludeLegendaries`，透過 `router.replace` 重新載入伺服器資料；接受 `1`、`true`、`yes` |
+| 圖鑑關鍵字、屬性、只看傳說 | Client Component 的 React state，在已載入的完整列表中篩選；重新整理不保留 |
+| 直條圖的比較能力 | React state，依選取能力由高到低排序 |
+| 散佈圖的 X/Y 軸、屬性圖例與框選 | React state；圖例篩選只依主屬性 |
+| 散佈圖縮放 | D3 zoom 與 ref；按鈕縮放、中鍵平移，框選使用 D3 brush |
 
-## 9. 文件與待辦事項
-- 長期建議：
-  - 收集截圖或動態 GIF 至 `README.md`/`guide.md`，便於快速展示成果。
-  - 擴充 `tests/e2e/`，涵蓋過濾、詳細頁等核心互動。
-  - 若有部署需求，可新增 CI/CD 腳本與容器化設定。
+`StatScatterMatrix` 名稱保留自先前設計，現況是可切換 X/Y 軸的單一散佈圖，並非同時呈現所有能力配對的矩陣。
 
-此指南將隨著專案演進更新，若發現內容過時請於 PR 中同步調整。
+雷達圖、直條圖和散佈圖在 `useEffect` 中由 D3 操作 SVG；React 管理容器、控制項與資料。詳細頁的雙環圖使用 `d3-shape` 計算弧線，由 React 產生 SVG，不需在瀏覽器執行 D3 DOM 操作。
+
+能力條的長度依該能力在整份載入資料中的最大值正規化，不是固定除以 255；不同能力的條長不能直接當成相同刻度比較。
+
+## 5. 圖鑑與屬性相剋
+
+`loadPokemonDetailPageViewModel` 會取得所有能力資料，為每筆建立圖片路徑、能力條、總和與兩組相剋結果。列表與詳細頁共用這份完整 ViewModel；詳細頁與 metadata 目前分別載入後再以編號找第一筆，沒有專用的單筆查詢。
+
+目前相剋計算：
+
+- 防禦：對每種攻擊屬性，將它對寶可夢主、副屬性的倍率相乘。
+- 攻擊：嘗試從自身主、副屬性的攻擊中取較高倍率，目標只有單一屬性，未計入其他戰鬥條件。
+- 已知問題：攻擊端 `reduce` 初值是 `1`，結果永遠不低於 `1`，因此抗性與免疫會被顯示成等倍。修正前不可將此區當作正確的完整對戰判斷。
+
+圖片查找透過掃描 `public/img` 建立編號到檔名的快取。目前只解析檔名前三位數，且同編號只保留第一個找到的檔案；它無法可靠區分型態，四位數編號也會被錯誤辨識。缺檔或讀取失敗時回傳 `null`，由頁面顯示佔位內容。
+
+## 6. 設定、快取與 DI
+
+`ConfigProvider` 在容器初始化時選擇 CSV 路徑，`CsvPokemonRepository` 在第一次查詢時讀檔。設定優先順序與啟動範例見 [README](README.md)。CSV 和圖片索引都只有記憶體快取，沒有檔案監聽或手動失效入口。
+
+`src/di/tokens.ts` 定義 Symbol；`src/server/container.ts` 註冊設定值、Repository 實例、StatsAverager singleton 及 UseCase factory。UseCase 由 factory 建立，並非全部都是 singleton。頁面透過 `server/useCases.ts` 取得服務。
+
+新增 UseCase 時，依序處理 Domain 介面、UseCase / DTO、token / factory / container、Presenter / ViewModel 與頁面。只有新增依賴才需要新增 token，沿用既有依賴時不必機械式增加註冊。
+
+## 7. 分層原則與現況落差
+
+目標是讓 Application / Domain 不依賴 Next.js、React 或 I/O；Infra 實作外部存取，App 負責呈現，Server 負責組裝。
+
+目前仍有兩個例外，後續維護時需知悉：
+
+1. 相剋矩陣及算法在 App 的 ViewModel，尚未移到 Domain。
+2. `core/shared/utils.ts` 的 `cn` 依賴 clsx 與 tailwind-merge，實際上是 UI 工具，不能將整個 `core` 描述成完全獨立於 UI。
+
+另外，圖鑑 ViewModel 直接引用 chart 目錄內的能力標籤、屬性翻譯與配色。需要重用或調整時，先確認兩個頁面的影響，再考慮抽到共用呈現模組。
+
+## 8. 現有驗證工具
+
+Vitest 設定使用 jsdom、Testing Library 與 `tests/setup.ts`。測試分布在 `tests/domain`、`tests/application`、`tests/infra`、`tests/server`、`tests/app/pokemon`；共用資料在 `tests/factories`、`tests/stubs`。目前沒有獨立的 `tests/integration` 目錄。
+
+Playwright 設定使用 Chromium、Firefox、WebKit，預設可啟動 `yarn dev`，但 `tests/e2e` 目錄與案例尚未建立。設定存在不等於流程已被驗證。
+
+本次僅更新文件，保留測試檔、測試設定、fixture 與套件指令原樣；沒有重跑測試或取得新的通過／覆蓋率結果。後續工作建議與手動驗收條件見 [ROADMAP](ROADMAP.md)。
