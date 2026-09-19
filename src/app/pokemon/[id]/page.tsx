@@ -268,6 +268,17 @@ function AttackDirection({ label }: { label: string }) {
   );
 }
 
+const MATCHUP_CHIP_COLORS: Record<PokemonTypeMatchupViewModel['category'], string> = {
+  super:
+    'border-orange-300 bg-orange-50 text-orange-900 dark:border-orange-700 dark:bg-orange-950/60 dark:text-orange-200',
+  notVery:
+    'border-teal-300 bg-teal-50 text-teal-900 dark:border-teal-700 dark:bg-teal-950/60 dark:text-teal-200',
+  immune:
+    'border-violet-300 bg-violet-50 text-violet-900 dark:border-violet-700 dark:bg-violet-950/60 dark:text-violet-200',
+  neutral:
+    'border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100',
+};
+
 function MatchupChips({ matchups }: { matchups: PokemonTypeMatchupViewModel[] }) {
   if (!matchups.length) return <p className="text-sm text-slate-500">尚無屬性資料。</p>;
   return (
@@ -275,7 +286,7 @@ function MatchupChips({ matchups }: { matchups: PokemonTypeMatchupViewModel[] })
       {matchups.map((matchup) => (
         <li
           key={matchup.slug}
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-sm ${MATCHUP_CHIP_COLORS[matchup.category]}`}
         >
           <Image
             src={matchup.iconPath}
