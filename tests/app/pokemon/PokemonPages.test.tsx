@@ -143,9 +143,9 @@ describe('Pokemon pages', () => {
     expect(screen.getAllByText('#001')[0]).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Alpha' })).toHaveAttribute('src', '/img/001.png');
     expect(screen.getByText('能力值總和')).toBeInTheDocument();
-    expect(screen.getByText('屬性弱點倍率表')).toBeInTheDocument();
-    expect(screen.getByText('防禦方')).toBeInTheDocument();
-    expect(screen.getByText('攻擊方')).toBeInTheDocument();
+    expect(screen.getByText('屬性相剋指南')).toBeInTheDocument();
+    expect(screen.getByText('被攻擊時：這隻怕什麼？')).toBeInTheDocument();
+    expect(screen.getByText('攻擊時：打哪些屬性更有效？')).toBeInTheDocument();
     expect(screen.getAllByText('2×')).toHaveLength(2);
   });
 

@@ -1,4 +1,3 @@
-import { arc } from 'd3-shape';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
@@ -9,41 +8,8 @@ import { loadPokemonFormViewModel } from '../presenter';
 
 import type {
   PokemonDetailEntryViewModel,
-  PokemonTypeMatchupCategory,
   PokemonTypeMatchupViewModel,
 } from '../view-models/pokemonDetailViewModel';
-
-type MatchupIntent = 'defense' | 'offense';
-
-const MATCHUP_TEXT_CLASS_MAP: Record<MatchupIntent, Record<PokemonTypeMatchupCategory, string>> = {
-  defense: {
-    super: 'text-rose-600 dark:text-rose-300',
-    notVery: 'text-emerald-600 dark:text-emerald-300',
-    neutral: 'text-slate-700 dark:text-slate-100',
-    immune: 'text-slate-500 dark:text-slate-400',
-  },
-  offense: {
-    super: 'text-emerald-600 dark:text-emerald-300',
-    notVery: 'text-amber-600 dark:text-amber-300',
-    neutral: 'text-slate-700 dark:text-slate-100',
-    immune: 'text-slate-500 dark:text-slate-400',
-  },
-};
-
-const MATCHUP_RING_COLOR_MAP: Record<MatchupIntent, Record<PokemonTypeMatchupCategory, string>> = {
-  defense: {
-    super: '#fb7185',
-    notVery: '#34d399',
-    neutral: '#94a3b8',
-    immune: '#a5b4fc',
-  },
-  offense: {
-    super: '#34d399',
-    notVery: '#fbbf24',
-    neutral: '#94a3b8',
-    immune: '#a855f7',
-  },
-};
 
 type PokemonDetailRouteProps = {
   params: Promise<{ id: string }>;
@@ -171,20 +137,11 @@ export default async function PokemonDetailRoute(props: PokemonDetailRouteProps)
       </div>
 
       {hasMatchups ? (
-        <Card className="border border-slate-200/70 shadow-sm dark:border-slate-800">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-xl">屬性弱點倍率表</CardTitle>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              內環為承受攻擊時的倍率；外環為自身屬性招式對單一目標屬性的最佳相剋倍率。
-            </p>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <TypeMatchupPanel
-              defenseMatchups={pokemon.defenseMatchups}
-              offenseMatchups={pokemon.offenseMatchups}
-            />
-          </CardContent>
-        </Card>
+        <TypeMatchupPanel
+          defenseMatchups={pokemon.defenseMatchups}
+          offenseMatchups={pokemon.offenseMatchups}
+          ownTypeLabels={pokemon.typeBadges.map((type) => type.label)}
+        />
       ) : null}
     </section>
   );
@@ -212,238 +169,176 @@ function PokemonImage({ pokemon }: { pokemon: PokemonDetailEntryViewModel }) {
 }
 
 type TypeMatchupPanelProps = {
+  ownTypeLabels: string[];
   defenseMatchups: PokemonTypeMatchupViewModel[];
   offenseMatchups: PokemonTypeMatchupViewModel[];
 };
 
-function TypeMatchupPanel({ defenseMatchups, offenseMatchups }: TypeMatchupPanelProps) {
-  const orderedDefense = [...defenseMatchups].sort((a, b) => a.order - b.order);
-  const orderedOffense = [...offenseMatchups].sort((a, b) => a.order - b.order);
-  const hasDefense = orderedDefense.length > 0;
-  const hasOffense = orderedOffense.length > 0;
-
-  if (!hasDefense && !hasOffense) {
-    return <p className="text-sm text-slate-500 dark:text-slate-400">尚無屬性資料。</p>;
-  }
+function TypeMatchupPanel({
+  defenseMatchups,
+  offenseMatchups,
+  ownTypeLabels,
+}: TypeMatchupPanelProps) {
+  const neutralDefense = defenseMatchups.filter((entry) => entry.multiplier === 1);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_1fr]">
-      <div className="flex justify-center">
-        <TypeMatchupWheel defense={orderedDefense} offense={orderedOffense} />
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <MatchupDetailList
-          title="防禦方"
-          description="不同屬性攻擊此寶可夢時的傷害倍率"
-          matchups={defenseMatchups}
-          intent="defense"
-        />
-        <MatchupDetailList
-          title="攻擊方"
-          description="自身屬性招式對單一目標屬性的最佳相剋倍率；不含本系加成、特性、道具與實際招式配置。"
-          matchups={offenseMatchups}
-          intent="offense"
-        />
-      </div>
-    </div>
+    <Card className="border border-slate-200/70 dark:border-slate-800">
+      <CardHeader>
+        <h2 className="text-xl font-semibold">屬性相剋指南</h2>
+        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          先看防禦，知道這隻怕什麼；再看攻擊，找出適合對付的屬性。
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <section aria-label="防禦相剋" className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold">被攻擊時：這隻怕什麼？</h3>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              下列屬性是對手的招式。倍率越高，這隻受到的屬性傷害越多。
+            </p>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <MatchupGroup
+              title="弱點"
+              description="2× 兩倍傷害 · 4× 四倍傷害"
+              tone="danger"
+              matchups={defenseMatchups.filter((entry) => entry.multiplier > 1)}
+              empty="沒有屬性弱點"
+            />
+            <MatchupGroup
+              title="抗性"
+              description="0.5× 一半傷害 · 0.25× 四分之一傷害"
+              tone="resist"
+              matchups={defenseMatchups.filter(
+                (entry) => entry.multiplier > 0 && entry.multiplier < 1,
+              )}
+              empty="沒有屬性抗性"
+            />
+            <MatchupGroup
+              title="免疫"
+              description="0× 不受這種屬性的招式傷害"
+              tone="immune"
+              matchups={defenseMatchups.filter((entry) => entry.multiplier === 0)}
+              empty="沒有免疫的屬性"
+            />
+          </div>
+          <details className="rounded-xl border border-slate-200 dark:border-slate-800">
+            <summary className="min-h-11 cursor-pointer rounded-xl px-4 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
+              一般傷害 · 1×（{neutralDefense.length} 種屬性）
+            </summary>
+            <div className="px-4 pb-4">
+              <MatchupChips matchups={neutralDefense} />
+            </div>
+          </details>
+        </section>
+        <details className="rounded-xl border border-slate-200 dark:border-slate-800">
+          <summary className="min-h-11 cursor-pointer rounded-xl px-4 py-4 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
+            <h3 className="inline">攻擊時：打哪些屬性更有效？</h3>
+          </summary>
+          <section aria-label="攻擊相剋" className="space-y-4 px-4 pb-4">
+            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              下列屬性是對手的屬性。假設使用這隻的{ownTypeLabels.join('或')}
+              屬性招式，選擇其中效果最好的一種；只考慮單一屬性的對手。
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <MatchupGroup
+                title="效果絕佳"
+                description="2× 傷害加倍"
+                tone="resist"
+                matchups={offenseMatchups.filter((entry) => entry.multiplier > 1)}
+                empty="沒有可造成加倍傷害的屬性"
+              />
+              <MatchupGroup
+                title="效果不佳"
+                description="0.5× 傷害減半"
+                tone="danger"
+                matchups={offenseMatchups.filter(
+                  (entry) => entry.multiplier > 0 && entry.multiplier < 1,
+                )}
+                empty="沒有傷害減半的屬性"
+              />
+              <MatchupGroup
+                title="無法造成傷害"
+                description="0× 對手免疫"
+                tone="immune"
+                matchups={offenseMatchups.filter((entry) => entry.multiplier === 0)}
+                empty="沒有完全免疫這些攻擊的屬性"
+              />
+              <MatchupGroup
+                title="一般效果"
+                description="1× 正常傷害"
+                tone="neutral"
+                matchups={offenseMatchups.filter((entry) => entry.multiplier === 1)}
+                empty="沒有一般效果的屬性"
+              />
+            </div>
+          </section>
+        </details>
+        <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          這裡只計算屬性相剋，不含本系加成、特性、道具與實際招式配置，並非最終傷害。
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
-type MatchupDetailListProps = {
+const GROUP_TONES = {
+  danger:
+    'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-900 dark:bg-rose-950/25 dark:text-rose-100',
+  resist:
+    'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/25 dark:text-emerald-100',
+  immune:
+    'border-violet-200 bg-violet-50 text-violet-950 dark:border-violet-900 dark:bg-violet-950/25 dark:text-violet-100',
+  neutral:
+    'border-slate-200 bg-slate-50 text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100',
+};
+
+function MatchupGroup({
+  title,
+  description,
+  matchups,
+  empty,
+  tone,
+}: {
   title: string;
   description: string;
   matchups: PokemonTypeMatchupViewModel[];
-  intent: MatchupIntent;
-};
-
-function MatchupDetailList({ title, description, matchups, intent }: MatchupDetailListProps) {
-  const textClassMap = MATCHUP_TEXT_CLASS_MAP[intent];
-
+  empty: string;
+  tone: keyof typeof GROUP_TONES;
+}) {
   return (
     <section
       aria-label={title}
-      className="space-y-3 rounded-2xl border border-slate-200/70 bg-white/60 p-4 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/30"
+      className={`min-w-0 space-y-3 rounded-xl border p-4 ${GROUP_TONES[tone]}`}
     >
       <div>
-        <p className="text-base font-semibold text-slate-900 dark:text-white">{title}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+        <h4 className="font-semibold">{title}</h4>
+        <p className="mt-1 text-sm leading-relaxed">{description}</p>
       </div>
-      {matchups.length === 0 ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">尚無對應資料。</p>
-      ) : (
-        <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
-          {matchups.map((matchup) => (
-            <li
-              key={`${intent}-${matchup.slug}`}
-              className="flex items-center justify-between rounded-xl border border-slate-200/70 bg-white px-3 py-2 text-sm dark:border-slate-800/60 dark:bg-slate-950/30"
-            >
-              <span
-                className="inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold text-slate-900 dark:text-slate-50"
-                style={{ borderColor: matchup.color }}
-              >
-                <Image
-                  src={matchup.iconPath}
-                  alt={matchup.label}
-                  width={16}
-                  height={16}
-                  className="h-4 w-4"
-                />
-                {matchup.label}
-              </span>
-              <span className={`text-base font-bold ${textClassMap[matchup.category]}`}>
-                {matchup.multiplierLabel}×
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {matchups.length ? <MatchupChips matchups={matchups} /> : <p className="text-sm">{empty}</p>}
     </section>
   );
 }
 
-type TypeMatchupWheelProps = {
-  defense: PokemonTypeMatchupViewModel[];
-  offense: PokemonTypeMatchupViewModel[];
-};
-
-function TypeMatchupWheel({ defense, offense }: TypeMatchupWheelProps) {
-  const maxDefenseOrder = defense.reduce((max, entry) => Math.max(max, entry.order), -1);
-  const maxOffenseOrder = offense.reduce((max, entry) => Math.max(max, entry.order), -1);
-  const segmentCount = Math.max(maxDefenseOrder, maxOffenseOrder) + 1;
-
-  if (segmentCount <= 0) {
-    return null;
-  }
-
-  const defenseByOrder = new Map(defense.map((entry) => [entry.order, entry]));
-  const offenseByOrder = new Map(offense.map((entry) => [entry.order, entry]));
-  const segments = Array.from({ length: segmentCount }, (_, index) => {
-    const defenseEntry = defenseByOrder.get(index) ?? null;
-    const offenseEntry = offenseByOrder.get(index) ?? null;
-    return {
-      index,
-      defense: defenseEntry,
-      offense: offenseEntry,
-      type: defenseEntry ?? offenseEntry,
-    };
-  });
-
-  const VIEWBOX_SIZE = 320;
-  const center = VIEWBOX_SIZE / 2;
-  const defenseInnerRadius = 108;
-  const defenseOuterRadius = 126;
-  const offenseInnerRadius = 144;
-  const offenseOuterRadius = 162;
-  const iconRadius = offenseOuterRadius + 22;
-  const angleStep = (2 * Math.PI) / segmentCount;
-  const gap = angleStep * 0.12;
-  const ringColors = MATCHUP_RING_COLOR_MAP;
-
-  const defenseArcGenerator = arc()
-    .innerRadius(defenseInnerRadius)
-    .outerRadius(defenseOuterRadius)
-    .cornerRadius(4);
-
-  const offenseArcGenerator = arc()
-    .innerRadius(offenseInnerRadius)
-    .outerRadius(offenseOuterRadius)
-    .cornerRadius(4);
-
+function MatchupChips({ matchups }: { matchups: PokemonTypeMatchupViewModel[] }) {
   return (
-    <div className="relative h-[320px] w-[320px] max-w-full">
-      <svg
-        viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
-        className="h-full w-full"
-        aria-hidden="true"
-      >
-        <g transform={`translate(${center} ${center})`}>
-          {segments.map((segment) => {
-            if (!segment.defense) {
-              return null;
-            }
-            const startAngle = -Math.PI / 2 + segment.index * angleStep + gap / 2;
-            const endAngle = startAngle + angleStep - gap;
-            const path = defenseArcGenerator({
-              startAngle,
-              endAngle,
-              innerRadius: defenseInnerRadius,
-              outerRadius: defenseOuterRadius,
-            });
-            if (!path) {
-              return null;
-            }
-            return (
-              <path
-                key={`def-arc-${segment.defense.slug}`}
-                d={path}
-                fill={ringColors.defense[segment.defense.category]}
-              >
-                <title>{`${segment.defense.label} 防禦：${segment.defense.multiplierLabel}×`}</title>
-              </path>
-            );
-          })}
-          {segments.map((segment) => {
-            if (!segment.offense) {
-              return null;
-            }
-            const startAngle = -Math.PI / 2 + segment.index * angleStep + gap / 2;
-            const endAngle = startAngle + angleStep - gap;
-            const path = offenseArcGenerator({
-              startAngle,
-              endAngle,
-              innerRadius: offenseInnerRadius,
-              outerRadius: offenseOuterRadius,
-            });
-            if (!path) {
-              return null;
-            }
-            return (
-              <path
-                key={`atk-arc-${segment.offense.slug}`}
-                d={path}
-                fill={ringColors.offense[segment.offense.category]}
-              >
-                <title>{`${segment.offense.label} 攻擊：${segment.offense.multiplierLabel}×`}</title>
-              </path>
-            );
-          })}
-        </g>
-      </svg>
-      {segments.map((segment) => {
-        if (!segment.type) {
-          return null;
-        }
-        const startAngle = -Math.PI / 2 + segment.index * angleStep;
-        const angle = startAngle + angleStep / 2;
-        const x = center + iconRadius * Math.cos(angle);
-        const y = center + iconRadius * Math.sin(angle);
-        return (
-          <span
-            key={`icon-${segment.type.slug}-${segment.index}`}
-            className="absolute flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/60 shadow-sm dark:border-slate-900/70"
-            style={{
-              left: `${x}px`,
-              top: `${y}px`,
-              borderColor: segment.type.color,
-            }}
-          >
-            <Image
-              src={segment.type.iconPath}
-              alt={segment.type.label}
-              width={22}
-              height={22}
-              className="h-5 w-5"
-            />
-          </span>
-        );
-      })}
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">雙層相剋圖</span>
-        <div className="text-lg font-bold text-slate-900 dark:text-white">防禦 / 攻擊</div>
-        <p className="text-[11px] tracking-[0.3em] text-slate-400 uppercase dark:text-slate-500">
-          {segmentCount} TYPES
-        </p>
-      </div>
-    </div>
+    <ul className="flex flex-wrap gap-2">
+      {matchups.map((matchup) => (
+        <li
+          key={matchup.slug}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        >
+          <Image
+            src={matchup.iconPath}
+            alt=""
+            width={18}
+            height={18}
+            className="h-[18px] w-[18px]"
+          />
+          <span>{matchup.label}</span>
+          <span className="font-bold tabular-nums">{matchup.multiplierLabel}×</span>
+        </li>
+      ))}
+    </ul>
   );
 }

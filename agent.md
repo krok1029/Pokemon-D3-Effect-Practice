@@ -13,7 +13,7 @@
 - Next.js 15.4.6 App Router、React 19.1.0、TypeScript 5、D3 7、Tailwind CSS 4、shadcn/ui、Radix Tooltip、next-themes。
 - Yarn 4.9.4，實際使用 `node_modules`，不是 Plug'n'Play。
 - `/chart` 提供雷達、依屬性平均直條圖、單一可切換軸的互動散佈圖。
-- `/pokemon` 提供網址同步的搜尋與篩選；`/pokemon/[id]?form=...` 提供指定型態的能力及相剋雙環圖；`/` 提供網站介紹及兩個主要入口。
+- `/pokemon` 提供網址同步的搜尋與篩選；`/pokemon/[id]?form=...` 提供指定型態的能力及相剋分組；`/` 提供網站介紹及兩個主要入口。
 - 沒有 API Route、外部即時資料服務或資料庫。
 
 ## 重要邊界
