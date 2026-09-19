@@ -181,6 +181,7 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
             <PokemonCard
               key={`${pokemon.id}-${pokemon.formId}`}
               pokemon={pokemon}
+              imagePriority={page.page === first?.page && index < 3}
               index={(page.page - 1) * POKEMON_PAGE_SIZE + index}
               returnTo={pokemonListHref(filters, page.page)}
             />

@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 
+import { PokemonCardImage } from './PokemonCardImage';
 import { rememberPokemonPosition } from '../lib/pokemonListPosition';
 import { pokemonCardAnchor, pokemonDetailReturnHref } from '../lib/pokemonListQuery';
 
@@ -14,9 +15,17 @@ type PokemonCardProps = {
   pokemon: PokemonCardViewModel;
   returnTo: string;
   index: number;
+  imagePriority?: boolean;
+  deferImages?: boolean;
 };
 
-export function PokemonCard({ pokemon, returnTo, index }: PokemonCardProps) {
+export function PokemonCard({
+  pokemon,
+  returnTo,
+  index,
+  imagePriority = false,
+  deferImages = false,
+}: PokemonCardProps) {
   const progressGradient = `linear-gradient(90deg, ${pokemon.accentColor} 0%, var(--chart-1) 100%)`;
 
   return (
@@ -27,30 +36,21 @@ export function PokemonCard({ pokemon, returnTo, index }: PokemonCardProps) {
     >
       <CardHeader className="gap-4 pb-2">
         <div className="flex gap-4">
-          <div className="relative aspect-square w-24 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
-            {pokemon.imagePath ? (
-              <Image
-                src={pokemon.imagePath}
-                alt={pokemon.name}
-                fill
-                sizes="96px"
-                className="object-contain p-2"
-                priority={pokemon.id <= 30}
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-xs text-slate-500 dark:text-slate-400">
-                無圖片
-              </div>
-            )}
-          </div>
+          <PokemonCardImage
+            key={pokemon.imagePath}
+            src={pokemon.imagePath}
+            name={pokemon.name}
+            priority={imagePriority}
+            defer={deferImages}
+          />
 
-          <div className="flex flex-1 flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   #{pokemon.id.toString().padStart(3, '0')}
                 </span>
-                <CardTitle className="text-xl">{pokemon.name}</CardTitle>
+                <CardTitle className="text-xl leading-snug break-words">{pokemon.name}</CardTitle>
               </div>
               {pokemon.isLegendary ? (
                 <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold tracking-wide text-amber-800 uppercase shadow-sm dark:bg-amber-900/80 dark:text-amber-100">
@@ -80,7 +80,7 @@ export function PokemonCard({ pokemon, returnTo, index }: PokemonCardProps) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
             <span>能力值總和</span>
             <span className="rounded-md bg-slate-100 px-2 py-1 text-base text-slate-900 dark:bg-slate-800 dark:text-slate-50">
