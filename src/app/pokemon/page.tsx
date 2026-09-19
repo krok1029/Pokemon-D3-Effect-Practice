@@ -29,7 +29,13 @@ export default async function PokemonPage({
     <section className="space-y-8">
       <header className="space-y-3">
         <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">資料總表</p>
-        <h1 className="text-3xl font-semibold tracking-tight">個別寶可夢資料</h1>
+        <h1
+          id="pokemon-list-heading"
+          tabIndex={-1}
+          className="text-3xl font-semibold tracking-tight"
+        >
+          個別寶可夢資料
+        </h1>
         <p className="text-muted-foreground text-sm">
           收錄 {summary.sampleCountLabel} 筆型態樣本，涵蓋 {summary.speciesCountLabel}{' '}
           個不同圖鑑編號。可用搜尋與屬性篩選查找六項基礎能力值、屬性與傳說狀態。

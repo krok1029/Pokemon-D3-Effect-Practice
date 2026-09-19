@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { PokemonFeed } from './PokemonFeed';
+import { PokemonScrollToTop } from './PokemonScrollToTop';
 import {
   pokemonListHref,
   readPokemonListFilters,
@@ -174,6 +175,7 @@ export function PokemonList({ initialPage }: PokemonListProps) {
         initialPage={initialPage}
         requestedPage={readPokemonListPage(new URLSearchParams(query))}
       />
+      <PokemonScrollToTop />
     </div>
   );
 }
