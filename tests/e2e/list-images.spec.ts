@@ -6,23 +6,27 @@ test('慢速圖片保留固定空間，靠近畫面才請求其他圖片', async
   const ready = new Promise<void>((resolve) => {
     release = resolve;
   });
-  const requests: string[] = [];
+  const requests = new Set<string>();
   await page.route('**/_next/image?*', async (route) => {
-    if (new URL(route.request().url()).searchParams.get('url')?.startsWith('/img/')) {
-      requests.push(route.request().url());
+    const source = new URL(route.request().url()).searchParams.get('url');
+    if (source?.startsWith('/img/')) {
+      // Firefox may request a held preload again; count the distinct images selected for loading.
+      requests.add(source);
       await ready;
     }
     await route.continue();
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/pokemon', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('textbox', { name: '搜尋寶可夢' })).toBeEnabled();
   const image = page.getByRole('img', { name: 'Bulbasaur', exact: true });
   const slot = image.locator('..');
   await expect(slot).toHaveAttribute('aria-busy', 'true');
   const before = await slot.boundingBox();
   expect(before?.width).toBe(96);
   expect(before?.height).toBe(96);
-  expect(requests.length).toBeLessThanOrEqual(6);
+  expect(requests.size).toBeLessThanOrEqual(6);
+  await expect(page.getByRole('img', { name: 'Pidgeot', exact: true })).toHaveCount(0);
   // WHEN: The slow images finish downloading.
   release();
   // THEN: The image appears without changing its reserved dimensions.

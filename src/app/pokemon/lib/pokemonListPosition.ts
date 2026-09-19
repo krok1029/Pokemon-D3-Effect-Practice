@@ -10,7 +10,15 @@ export function rememberPokemonPosition(listHref: string, anchor: string) {
   } catch {
     // The URL still identifies the batch and card when browser storage is unavailable.
   }
-  window.history.replaceState(window.history.state, '', href);
+  window.history.replaceState({ ...window.history.state, pokemonListLeaving: true }, '', href);
+}
+
+export function resumePokemonListPositionTracking() {
+  if (window.history.state?.pokemonListLeaving) {
+    const state = { ...window.history.state };
+    delete state.pokemonListLeaving;
+    window.history.replaceState(state, '', window.location.href);
+  }
 }
 
 export function readPokemonPosition(): PokemonListPosition | null {
@@ -36,4 +44,15 @@ export function restorePokemonPosition(position: PokemonListPosition) {
   if (!card) return false;
   window.scrollBy({ top: card.getBoundingClientRect().top - position.top, behavior: 'instant' });
   return true;
+}
+
+export function visiblePokemonPosition(container: HTMLElement | null): PokemonListPosition | null {
+  if (!container) return null;
+  const card = Array.from(container.querySelectorAll<HTMLElement>('[data-pokemon-index]')).find(
+    (element) => {
+      const bounds = element.getBoundingClientRect();
+      return bounds.bottom > 112 && bounds.top < window.innerHeight;
+    },
+  );
+  return card ? { anchor: card.id, top: card.getBoundingClientRect().top } : null;
 }

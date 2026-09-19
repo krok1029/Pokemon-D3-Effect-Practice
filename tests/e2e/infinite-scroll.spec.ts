@@ -32,7 +32,7 @@ test('接近底部自動載入下一批並維持總數', async ({ page }) => {
   await expect(page.getByTestId('loaded-range')).toHaveText('已載入第 1–24 筆');
   await expect(page.locator('[data-pokemon-index]')).toHaveCount(24);
   // WHEN: The visitor scrolls near the end.
-  await page.getByRole('button', { name: '載入更多', exact: true }).scrollIntoViewIfNeeded();
+  await page.getByTestId('load-sentinel').scrollIntoViewIfNeeded();
   // THEN: The next batch arrives automatically with a stable total.
   await expect(page.getByTestId('loaded-range')).toHaveText('已載入第 1–48 筆');
   await expect(page.getByRole('status')).toHaveText('共 1,032 筆型態樣本符合條件。');
@@ -80,7 +80,7 @@ test('後續載入失敗可重試且不遺失已載入資料', async ({ page }) 
   );
   await page.goto('/pokemon');
   // WHEN: Automatic loading fails and the visitor retries.
-  await page.getByRole('button', { name: '載入更多', exact: true }).scrollIntoViewIfNeeded();
+  await page.getByTestId('load-sentinel').scrollIntoViewIfNeeded();
   await expect(page.getByText('載入失敗，請再試一次。')).toBeVisible();
   await expect(page.getByTestId('loaded-range')).toHaveText('已載入第 1–24 筆');
   await page.getByRole('button', { name: '重新載入', exact: true }).click();

@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import { PokemonCard } from './PokemonCard';
+import { PokemonVirtualGrid } from './PokemonVirtualGrid';
 import {
-  readPokemonPosition,
-  restorePokemonPosition,
+  resumePokemonListPositionTracking,
+  visiblePokemonPosition,
   type PokemonListPosition,
 } from '../lib/pokemonListPosition';
 import {
@@ -34,6 +34,10 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
   }));
   const { seed } = scope;
   const [pages, setPages] = useState<PokemonListPage[]>(() => (seed ? [seed] : []));
+  const pagesRef = useRef(pages);
+  useLayoutEffect(() => {
+    pagesRef.current = pages;
+  }, [pages]);
   const [loading, setLoading] = useState(!seed);
   const [error, setError] = useState(false);
   const request = useRef<AbortController | null>(null);
@@ -41,10 +45,21 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
   const listRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const restore = useRef<PokemonListPosition | null>(null);
+  const pokemons = useMemo(() => pages.flatMap((page) => page.pokemons), [pages]);
   const first = pages[0];
   const last = pages.at(-1);
   const total = first?.total ?? 0;
   const hasNext = Boolean(last && last.page * POKEMON_PAGE_SIZE < total);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const previous = root.style.overflowAnchor;
+    // The feed restores cards itself; browser anchoring to the footer would chase every new batch.
+    root.style.overflowAnchor = 'none';
+    return () => {
+      root.style.overflowAnchor = previous;
+    };
+  }, []);
 
   const loadPage = useCallback(
     async (page: number) => {
@@ -62,6 +77,10 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
         if (!response.ok) throw new Error('Could not load Pokémon');
         const data: PokemonListPage = await response.json();
         if (controller.signal.aborted) return;
+        const currentPages = pagesRef.current;
+        if (currentPages.length === 2 && !currentPages.some((batch) => batch.page === data.page)) {
+          restore.current ??= visiblePokemonPosition(listRef.current);
+        }
         setPages((current) =>
           [...current.filter((entry) => entry.page !== data.page), data].sort(
             (a, b) => a.page - b.page,
@@ -87,24 +106,20 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
   );
 
   useEffect(() => {
-    restore.current = readPokemonPosition();
+    resumePokemonListPositionTracking();
+    window.addEventListener('wheel', resumePokemonListPositionTracking, { passive: true });
+    window.addEventListener('pointerdown', resumePokemonListPositionTracking, { passive: true });
     const timer = !seed
       ? window.setTimeout(() => void loadPage(scope.requestedPage), 150)
       : undefined;
     return () => {
+      window.removeEventListener('wheel', resumePokemonListPositionTracking);
+      window.removeEventListener('pointerdown', resumePokemonListPositionTracking);
       window.clearTimeout(timer);
       request.current?.abort();
       request.current = null;
     };
   }, [scope, seed, loadPage]);
-
-  useEffect(() => {
-    if (!pages.length) return;
-    const frame = requestAnimationFrame(() => {
-      if (restore.current && restorePokemonPosition(restore.current)) restore.current = null;
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [pages]);
 
   useEffect(() => {
     if (!hasNext || loading || error || !sentinelRef.current) return;
@@ -123,19 +138,22 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
     const onScroll = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        if (
-          restore.current ||
-          !listRef.current ||
-          listRef.current.getBoundingClientRect().top > 112
-        )
+        if (window.history.state?.pokemonListLeaving || restore.current || !listRef.current) return;
+        if (listRef.current.getBoundingClientRect().top > 112) {
+          const firstPage = pagesRef.current[0];
+          if (!firstPage) return;
+          const href = pokemonListHref(scope.filters, firstPage.page);
+          if (href !== window.location.pathname + window.location.search + window.location.hash)
+            window.history.replaceState(window.history.state, '', href);
           return;
+        }
         const cards = listRef.current.querySelectorAll<HTMLElement>('[data-pokemon-index]');
         const card = Array.from(cards).find((item) => item.getBoundingClientRect().bottom > 112);
         if (!card) return;
         const page = Math.floor(Number(card.dataset.pokemonIndex) / POKEMON_PAGE_SIZE) + 1;
-        const href = pokemonListHref(scope.filters, page);
-        if (href !== window.location.pathname + window.location.search || window.location.hash) {
-          window.history.replaceState(window.history.state, '', `${href}#${card.id}`);
+        const href = `${pokemonListHref(scope.filters, page)}#${card.id}`;
+        if (href !== window.location.pathname + window.location.search + window.location.hash) {
+          window.history.replaceState(window.history.state, '', href);
         }
       });
     };
@@ -175,19 +193,15 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
           載入前 24 筆
         </button>
       ) : null}
-      {pages.map((page) => (
-        <div key={page.page} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {page.pokemons.map((pokemon, index) => (
-            <PokemonCard
-              key={`${pokemon.id}-${pokemon.formId}`}
-              pokemon={pokemon}
-              imagePriority={page.page === first?.page && index < 3}
-              index={(page.page - 1) * POKEMON_PAGE_SIZE + index}
-              returnTo={pokemonListHref(filters, page.page)}
-            />
-          ))}
-        </div>
-      ))}
+      {first && total > 0 ? (
+        <PokemonVirtualGrid
+          pokemons={pokemons}
+          startIndex={(first.page - 1) * POKEMON_PAGE_SIZE}
+          total={total}
+          filters={filters}
+          restore={restore}
+        />
+      ) : null}
       {first && total === 0 ? (
         <p className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-slate-500">
           找不到符合條件的寶可夢，試試調整搜尋或篩選條件。
@@ -195,6 +209,7 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
       ) : null}
       <div
         ref={sentinelRef}
+        data-testid="load-sentinel"
         className="flex min-h-16 items-center justify-center gap-3"
         aria-live="polite"
       >

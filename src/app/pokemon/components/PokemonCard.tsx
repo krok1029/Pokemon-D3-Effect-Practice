@@ -89,7 +89,17 @@ export function PokemonCard({
           </div>
           <Link
             prefetch={false}
-            onClick={() => rememberPokemonPosition(returnTo, pokemonCardAnchor(pokemon))}
+            onClick={(event) => {
+              if (
+                !event.metaKey &&
+                !event.ctrlKey &&
+                !event.shiftKey &&
+                !event.altKey &&
+                event.button === 0
+              ) {
+                rememberPokemonPosition(returnTo, pokemonCardAnchor(pokemon));
+              }
+            }}
             href={pokemonDetailReturnHref(
               pokemon.detailHref ?? `/pokemon/${pokemon.id}`,
               returnTo,
