@@ -13,9 +13,11 @@ import {
   getPokemonStatMaximums,
   type PokemonTypeBadgeViewModel,
 } from './pokemonCardViewModel';
-import { readPokemonListFilters } from '../lib/pokemonListQuery';
-
-export const POKEMON_PAGE_SIZE = 24;
+import {
+  readPokemonListFilters,
+  readPokemonListPage,
+  POKEMON_PAGE_SIZE,
+} from '../lib/pokemonListQuery';
 
 function getTypeOptions(entries: PokemonStatsEntryDto[]): PokemonTypeBadgeViewModel[] {
   const types = new Set(
@@ -32,16 +34,6 @@ function getTypeOptions(entries: PokemonStatsEntryDto[]): PokemonTypeBadgeViewMo
       color: TYPE_COLOR_MAP[slug] ?? '#64748b',
     };
   }).sort((a, b) => a.label.localeCompare(b.label, 'zh-Hant', { sensitivity: 'base' }));
-}
-
-export function buildPokemonListViewModel(entries: PokemonStatsEntryDto[]) {
-  const maximums = getPokemonStatMaximums(entries);
-  return {
-    pokemons: [...entries]
-      .sort((a, b) => a.id - b.id)
-      .map((entry) => buildPokemonCardViewModel(entry, maximums)),
-    typeOptions: getTypeOptions(entries),
-  };
 }
 
 export function buildPokemonListPage(entries: PokemonStatsEntryDto[], params: URLSearchParams) {
@@ -64,7 +56,7 @@ export function buildPokemonListPage(entries: PokemonStatsEntryDto[], params: UR
           String(entry.id).includes(keyword)),
     )
     .sort((a, b) => a.id - b.id);
-  const requested = Number(params.get('page') ?? 1);
+  const requested = readPokemonListPage(params);
   const lastPage = Math.max(1, Math.ceil(filtered.length / POKEMON_PAGE_SIZE));
   const page = Number.isSafeInteger(requested) && requested > 0 ? Math.min(requested, lastPage) : 1;
   const maximums = getPokemonStatMaximums(entries);

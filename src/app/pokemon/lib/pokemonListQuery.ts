@@ -18,11 +18,19 @@ export function readPokemonListFilters(
   };
 }
 
-export function pokemonListHref(filters: PokemonListFilters): string {
+export const POKEMON_PAGE_SIZE = 24;
+
+export function readPokemonListPage(params: Pick<URLSearchParams, 'get'>): number {
+  const page = Number(params.get('page') ?? 1);
+  return Number.isSafeInteger(page) && page > 0 ? page : 1;
+}
+
+export function pokemonListHref(filters: PokemonListFilters, page = 1): string {
   const params = new URLSearchParams();
   if (filters.search) params.set('q', filters.search);
   if (filters.typeFilter) params.set('type', filters.typeFilter);
   if (filters.onlyLegendary) params.set('legendary', '1');
+  if (page > 1) params.set('page', String(page));
   const query = params.toString();
   return query ? `/pokemon?${query}` : '/pokemon';
 }
@@ -51,7 +59,10 @@ export function safePokemonListReturnHref(
   try {
     const url = new URL(returnTo, 'https://pokemon.invalid');
     if (url.origin !== 'https://pokemon.invalid' || url.pathname !== '/pokemon') return '/pokemon';
-    const href = pokemonListHref(readPokemonListFilters(url.searchParams, validTypes));
+    const href = pokemonListHref(
+      readPokemonListFilters(url.searchParams, validTypes),
+      readPokemonListPage(url.searchParams),
+    );
     const anchor = /^#pokemon-\d+-[a-z0-9-]+$/.test(url.hash) ? url.hash : '';
     return href + anchor;
   } catch {

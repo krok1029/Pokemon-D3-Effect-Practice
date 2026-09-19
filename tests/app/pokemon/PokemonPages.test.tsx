@@ -32,14 +32,14 @@ vi.mock('@/app/pokemon/components/PokemonList', () => ({
 }));
 
 vi.mock('@/app/pokemon/presenter', () => ({
-  loadPokemonListViewModel: vi.fn(),
+  loadPokemonListPage: vi.fn(),
   loadPokemonFormViewModel: vi.fn(),
 }));
 
 import PokemonDetailRoute, { generateMetadata } from '@/app/pokemon/[id]/page';
 import { PokemonList } from '@/app/pokemon/components/PokemonList';
 import PokemonPage from '@/app/pokemon/page';
-import { loadPokemonListViewModel, loadPokemonFormViewModel } from '@/app/pokemon/presenter';
+import { loadPokemonListPage, loadPokemonFormViewModel } from '@/app/pokemon/presenter';
 import type {
   PokemonDetailEntryViewModel,
   PokemonDetailPageViewModel,
@@ -105,17 +105,20 @@ describe('Pokemon pages', () => {
 
   it('renders PokemonPage with header and passes data into PokemonList', async () => {
     const viewModel = buildViewModel();
-    (loadPokemonListViewModel as Mock).mockResolvedValue(viewModel);
+    const initialPage = {
+      ...viewModel,
+      summary: { sampleCountLabel: '2', speciesCountLabel: '2' },
+    };
+    (loadPokemonListPage as Mock).mockResolvedValue(initialPage);
 
-    render(await PokemonPage());
+    render(await PokemonPage({}));
 
     expect(screen.getByText('個別寶可夢資料')).toBeInTheDocument();
     expect(screen.getByText(/收錄 2 筆型態樣本，涵蓋 2 個不同圖鑑編號/)).toBeInTheDocument();
     expect(screen.getByTestId('pokemon-list-mock')).toBeInTheDocument();
     expect(PokemonList).toHaveBeenCalledWith(
       {
-        pokemons: viewModel.pokemons,
-        typeOptions: viewModel.typeOptions,
+        initialPage,
       },
       undefined,
     );

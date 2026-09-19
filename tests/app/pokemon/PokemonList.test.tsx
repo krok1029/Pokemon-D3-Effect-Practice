@@ -1,9 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PokemonList } from '@/app/pokemon/components/PokemonList';
+import { readPokemonListFilters } from '@/app/pokemon/lib/pokemonListQuery';
 import type { PokemonDetailEntryViewModel } from '@/app/pokemon/view-models/pokemonDetailViewModel';
+import type { PokemonListPage } from '@/app/pokemon/view-models/pokemonListViewModel';
 
 vi.mock('next/image', () => ({
   __esModule: true,
@@ -52,6 +54,41 @@ const typeOptions = [
   { slug: 'water', label: '水', iconPath: '/types/water.svg', color: '#38bdf8' },
 ];
 
+function makePage(
+  pokemons: PokemonDetailEntryViewModel[],
+  params = new URLSearchParams(),
+): PokemonListPage {
+  const filters = readPokemonListFilters(
+    params,
+    typeOptions.map((option) => option.slug),
+  );
+  const results = pokemons.filter(
+    (pokemon) =>
+      (!filters.search || pokemon.name.includes(filters.search)) &&
+      (!filters.onlyLegendary || pokemon.isLegendary) &&
+      (!filters.typeFilter ||
+        pokemon.typeBadges.some((badge) => badge.slug === filters.typeFilter)),
+  );
+  return {
+    pokemons: results,
+    filters,
+    typeOptions,
+    page: 1,
+    pageSize: 24,
+    total: results.length,
+    summary: {
+      sampleCountLabel: String(pokemons.length),
+      speciesCountLabel: String(pokemons.length),
+      numberRangeLabel: '',
+    },
+  };
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  window.history.replaceState(null, '', '/');
+});
+
 describe('PokemonList', () => {
   it('renders pokemon cards with images, badges and details', () => {
     const pokemons = [
@@ -72,7 +109,7 @@ describe('PokemonList', () => {
       }),
     ];
 
-    render(<PokemonList pokemons={pokemons} typeOptions={typeOptions} />);
+    render(<PokemonList initialPage={makePage(pokemons)} />);
 
     expect(screen.getByText('Pikachu')).toBeInTheDocument();
     expect(screen.getByText('Squirtle')).toBeInTheDocument();
@@ -107,30 +144,38 @@ describe('PokemonList', () => {
       }),
     ];
 
-    render(<PokemonList pokemons={pokemons} typeOptions={typeOptions} />);
+    render(<PokemonList initialPage={makePage(pokemons)} />);
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => ({
+        ok: true,
+        json: async () => makePage(pokemons, new URL(url, 'http://localhost').searchParams),
+      })),
+    );
 
     const [searchInput] = screen.getAllByPlaceholderText('輸入編號或名稱，例如 25、Pikachu');
     fireEvent.change(searchInput, { target: { value: 'Beta' } });
 
-    expect(screen.getByText('Beta')).toBeInTheDocument();
+    expect(await screen.findByText('Beta')).toBeInTheDocument();
 
     const legendaryToggle = screen.getByLabelText('只顯示傳說寶可夢');
     fireEvent.click(legendaryToggle);
-    expect(screen.getByText('Beta')).toBeInTheDocument();
+    expect(await screen.findByText('Beta')).toBeInTheDocument();
     expect(screen.queryByText('Alpha')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /火/ }));
     expect(
-      screen.getByText('找不到符合條件的寶可夢，試試調整搜尋或篩選條件。'),
+      await screen.findByText('找不到符合條件的寶可夢，試試調整搜尋或篩選條件。'),
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '全部' }));
-    expect(screen.getByText('Beta')).toBeInTheDocument();
+    expect(await screen.findByText('Beta')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /火/ }));
     fireEvent.click(legendaryToggle); // disable toggle
     fireEvent.change(searchInput, { target: { value: '' } });
-    expect(screen.getByText('Alpha')).toBeInTheDocument();
+    expect(await screen.findByText('Alpha')).toBeInTheDocument();
     expect(screen.queryByText('Beta')).not.toBeInTheDocument();
   });
 });

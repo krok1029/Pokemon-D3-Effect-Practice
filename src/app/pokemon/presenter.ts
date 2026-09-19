@@ -8,14 +8,7 @@ import {
   getPokemonStatMaximums,
   PokemonDetailPageViewModel,
 } from './view-models/pokemonDetailViewModel';
-import {
-  buildPokemonListViewModel,
-  buildPokemonListPage,
-} from './view-models/pokemonListViewModel';
-
-export async function loadPokemonListViewModel() {
-  return buildPokemonListViewModel(await getPokemonBaseStatsUseCase().execute());
-}
+import { buildPokemonListPage } from './view-models/pokemonListViewModel';
 
 export async function loadPokemonListPage(params = new URLSearchParams()) {
   return buildPokemonListPage(await getPokemonBaseStatsUseCase().execute(), params);

@@ -1,9 +1,7 @@
 import { Suspense } from 'react';
 
-import { buildDatasetSummaryViewModel } from '@/app/view-models/datasetSummaryViewModel';
-
 import { PokemonList } from './components/PokemonList';
-import { loadPokemonListViewModel } from './presenter';
+import { loadPokemonListPage } from './presenter';
 
 import type { Metadata } from 'next';
 
@@ -14,9 +12,18 @@ export const metadata: Metadata = {
   description: '瀏覽每隻寶可夢的基礎能力值、屬性與傳說狀態。',
 };
 
-export default async function PokemonPage() {
-  const viewModel = await loadPokemonListViewModel();
-  const summary = buildDatasetSummaryViewModel(viewModel.pokemons);
+export default async function PokemonPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries((await searchParams) ?? {})) {
+    const first = Array.isArray(value) ? value[0] : value;
+    if (first !== undefined) params.set(key, first);
+  }
+  const initialPage = await loadPokemonListPage(params);
+  const { summary } = initialPage;
 
   return (
     <section className="space-y-8">
@@ -33,7 +40,7 @@ export default async function PokemonPage() {
       </header>
 
       <Suspense fallback={<p className="text-muted-foreground text-sm">載入圖鑑中…</p>}>
-        <PokemonList pokemons={viewModel.pokemons} typeOptions={viewModel.typeOptions} />
+        <PokemonList initialPage={initialPage} />
       </Suspense>
     </section>
   );
