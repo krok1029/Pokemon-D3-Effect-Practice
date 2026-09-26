@@ -53,7 +53,7 @@ PLAYWRIGHT_BASE_URL=http://127.0.0.1:3040 yarn test:e2e --suite=catalog
 
 ## 驗證紀錄
 
-2026-09-26，Node.js v24.21.0，本次完成以下局部驗證；所有現有正式資料案例由協調任務執行完整命令後另行記錄。
+2026-09-26，Node.js v24.21.0，本次完成以下局部驗證；完整 `catalog`＋`averages` 整合及遠端 CI 結果記錄於 [#25](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues/25)。
 
 - `yarn test:e2e --suite=averages`：正式 snapshot build 成功，桌面／手機 × 三瀏覽器的 **18/18** 案例通過。
 - 傳說切換的桌面／手機案例在 Chromium 各連續執行三次，**6/6** 通過。此操作等待 server navigation 更新，使用 click 後輪詢 checked 與數值，不要求受控 checkbox 在 click 返回瞬間同步完成。

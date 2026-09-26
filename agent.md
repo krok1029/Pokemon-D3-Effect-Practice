@@ -33,7 +33,7 @@
 - 相剋不是取自 CSV，也不是完整傷害計算；攻擊取自身屬性招式對單一目標屬性的最佳倍率，保留免疫與抗性。
 - 型態身份由圖鑑編號與穩定的 `formId` 組成，網址不可使用 CSV 列索引；碰撞會明確報錯。
 - 圖片索引完整解析三位及四位編號；`app/pokemon/lib/pokemonFormImages.json` 以 `編號:formId` 明確對應檔名。列表與詳細頁共用選圖規則，不依賴檔案順序。補入 129 張官方圖後共有 1,025 列對照；剩 7 列（Ash-Greninja，以及 Pumpkaboo／Gourgeist 各 Small、Large、Super 尺寸）顯示佔位。來源、校驗及缺圖原因見 `data/pokemon-image-sources.json`；新增資源須先確認型態再更新對照。
-- 散佈圖選取以編號與 `formId` 區分身份，圖例明示主屬性篩選；目前不保留跨頁框選／縮放，也沒有手機觸控框選。
+- 散佈圖選取以編號與 `formId` 區分身份，圖例明示主屬性篩選；同頁傳說切換保留能力軸與主屬性偏好。鍵盤／觸控使用搜尋選取入口；不保留跨頁框選／縮放，也沒有手機拖曳框選。
 
 ## 驗證與本次範圍
 
@@ -41,4 +41,4 @@
 
 使用者已授權需求確定後隨功能調整測試、fixture 與必要設定，取代先前文件整理階段的「測試先不要改」。#14～#20 均已有實作及驗收紀錄：[第一批](docs/verification/roadmap-batch-1.md)、[#19 無限捲動](docs/verification/infinite-scroll.md)、[#16 圖片對應](docs/verification/image-form-mapping.md)、[#20 圖表連結](docs/verification/chart-detail-links.md)。後續補入 129 張官方圖的結果見 [補圖驗收](docs/verification/official-image-download.md)。驗收以頁面與公開網址為主，歷史測試結果不代表本次已重新執行。票券位於 [GitHub Issues](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues)。
 
-近期優先處理 #21～#23 的已重現問題（圖鑑導覽批次、同頁傳說切換、散佈圖裁切），再補 #24／#25 的操作與回歸保障；見 [現有功能盤點](docs/verification/feature-audit-2026-09-26.md)。2～4 隻寶可夢比較仍是待定規格的候選，尚未實作。
+#21～#25 已補上圖鑑導覽重設、分析條件保留、散佈圖裁切、搜尋選取與隔離回歸。`yarn test:e2e` 在暫存工作目錄建置，依序以完整 CSV 與平均圖 fixture 執行三瀏覽器測試，不使用根 `.next` 或既有開發服務；預設一個 worker。輸出位於 `test-results/regression-*`，GitHub Actions 失敗時保存報告及 trace。各項驗收見 [ROADMAP](ROADMAP.md)。2～4 隻寶可夢比較仍是待定規格的候選，尚未實作。

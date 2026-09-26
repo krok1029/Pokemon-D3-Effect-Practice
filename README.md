@@ -2,18 +2,18 @@
 
 寶可夢圖鑑與互動資料視覺化網站。透過本機 CSV 查詢個別寶可夢，並用 D3 比較六項基礎能力、各屬性平均值與能力分布。
 
-本文件於 2026-09-26 隨 #16 圖片對應及 #20 散佈圖詳細頁入口更新。驗收範圍與執行結果見 [第一批紀錄](docs/verification/roadmap-batch-1.md)、[#19 紀錄](docs/verification/infinite-scroll.md)、[#16 紀錄](docs/verification/image-form-mapping.md) 與 [#20 紀錄](docs/verification/chart-detail-links.md)。
+本文件於 2026-09-26 隨 #21～#25 的導覽、圖表操作及自動回歸補強更新。各項驗收入口與後續工作見 [ROADMAP](ROADMAP.md)。
 
 ## 目前功能
 
-| 路徑 | 功能 |
-| --- | --- |
-| `/chart` | 全體能力平均、雷達圖、依屬性比較的直條圖、可選擇兩項能力的散佈圖；可排除傳說寶可夢，框選結果可開啟正確型態的詳細頁 |
-| `/pokemon` | 搜尋與屬性／傳說篩選；每批 24 筆無限捲動，網址可分享條件與目前批次，返回時定位原卡片 |
-| `/pokemon/[id]?form=...` | 指定型態的個別資料、能力條、攻擊／被攻擊雙欄對照與完整屬性倍率 |
-| `/` | 網站用途、資料範圍與圖鑑／圖表入口，提供桌面及手機導覽 |
+| 路徑                     | 功能                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `/chart`                 | 全體能力平均、雷達圖、依屬性比較的直條圖、可選擇兩項能力的散佈圖；可排除傳說寶可夢，框選結果可開啟正確型態的詳細頁 |
+| `/pokemon`               | 搜尋與屬性／傳說篩選；每批 24 筆無限捲動，網址可分享條件與目前批次，返回時定位原卡片                               |
+| `/pokemon/[id]?form=...` | 指定型態的個別資料、能力條、攻擊／被攻擊雙欄對照與完整屬性倍率                                                     |
+| `/`                      | 網站用途、資料範圍與圖鑑／圖表入口，提供桌面及手機導覽                                                             |
 
-散佈圖支援主屬性圖例篩選、拖曳框選、選取結果清單、縮放按鈕與滑鼠中鍵平移。縮放範圍由元件的 `scaleExtent` 定義，目前是 0.5～4 倍；滑鼠滾輪縮放刻意停用。
+散佈圖支援主屬性圖例篩選、拖曳框選、選取結果清單、縮放按鈕與滑鼠中鍵平移。也可用名稱或編號搜尋，再以鍵盤或觸控選取並開啟指定型態；搜尋沿用目前傳說與主屬性條件。同頁切換傳說條件會保留能力軸與主屬性偏好。縮放範圍由元件的 `scaleExtent` 定義，目前是 0.5～4 倍；資料點保持在繪圖區內，滑鼠滾輪縮放刻意停用。
 
 ## 快速開始
 
@@ -29,16 +29,18 @@ yarn dev
 
 啟動後開啟 [首頁](http://localhost:3000)，或直接前往 [圖表頁](http://localhost:3000/chart)、[圖鑑頁](http://localhost:3000/pokemon)。
 
-| 指令 | 用途 |
-| --- | --- |
-| `yarn dev` | 啟動 Next.js 開發伺服器 |
-| `yarn build` / `yarn start` | 建置／啟動正式環境 |
-| `yarn lint` | ESLint 檢查 |
-| `yarn typecheck` | TypeScript 型別檢查 |
-| `yarn test` | Vitest，一般本機執行時進入監看模式 |
-| `yarn test:unit` | 一次執行目前由 Vitest 探索到的測試 |
-| `yarn coverage` | 執行 Vitest 並產出覆蓋率 |
-| `yarn test:e2e` | Playwright 頁面與網址驗收；首次執行需安裝對應瀏覽器：`yarn playwright install` |
+| 指令                        | 用途                                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| `yarn dev`                  | 啟動 Next.js 開發伺服器                                                                         |
+| `yarn build` / `yarn start` | 建置／啟動正式環境                                                                              |
+| `yarn lint`                 | ESLint 檢查                                                                                     |
+| `yarn typecheck`            | TypeScript 型別檢查                                                                             |
+| `yarn test`                 | Vitest，一般本機執行時進入監看模式                                                              |
+| `yarn test:unit`            | 一次執行目前由 Vitest 探索到的測試                                                              |
+| `yarn coverage`             | 執行 Vitest 並產出覆蓋率                                                                        |
+| `yarn test:e2e`             | 隔離正式建置後，執行三瀏覽器完整資料與平均圖 fixture 驗收；首次執行需 `yarn playwright install` |
+
+E2E 使用暫存目錄與自動分配的連接埠，不沿用開發服務或根目錄 `.next`，預設單一 worker。結果、失敗截圖與 trace 保留在 `test-results/regression-*`。可用 `yarn test:e2e --suite=catalog` 或 `--suite=averages` 選擇資料集，再追加 Playwright 檔名或 `--project=chromium`。自行設定 `PLAYWRIGHT_BASE_URL` 時，必須指定相符的 suite。GitHub Actions 在 push／PR 執行 lint、型別、單元測試及相同 E2E 流程，失敗時保存 artifacts；細節見 [回歸環境驗收](docs/verification/regression-ci.md)。
 
 ## 資料與統計口徑
 
@@ -94,7 +96,7 @@ Vitest 涵蓋 Domain、UseCase、CSV、DI 及圖鑑頁面；Playwright 以實際
 
 已完成 #20：散佈圖框選結果可開啟、刷新及分享正確型態的詳細頁，圖例明示依主屬性篩選。跨頁後不保留散佈圖框選及縮放狀態。
 
-前三階段的資料正確性與探索流程已交付。後續功能盤點確認圖鑑同路由導覽、傳說切換保留分析條件及縮放裁切仍需修正，已列為 #21～#23；手機／鍵盤操作與自動回歸保障列為 #24／#25。重現與完整 237 項 E2E 結果見 [現有功能盤點](docs/verification/feature-audit-2026-09-26.md)。完成這些補強後，再定義「2～4 隻寶可夢比較」的最小規格；比較功能目前尚未實作。
+後續盤點的 #21～#25 已補上：圖鑑主要導覽重設批次、傳說切換保留分析條件、散佈圖裁切、鍵盤／觸控搜尋選取及隔離 E2E／CI。原始問題與歷史結果見 [現有功能盤點](docs/verification/feature-audit-2026-09-26.md)，修正驗收入口見 [ROADMAP](ROADMAP.md)。下一個候選是定義「2～4 隻寶可夢比較」的最小規格；比較功能目前尚未實作。
 
 - [ROADMAP.md](ROADMAP.md)：待辦優先順序、原因與完成條件。
 - [guide.md](guide.md)：資料流程、互動狀態、分層及維護方式。

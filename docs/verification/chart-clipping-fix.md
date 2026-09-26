@@ -17,7 +17,7 @@
 
 ## 本機靜態驗證
 
-元件及新增 E2E 檔案的 ESLint、Prettier 檢查通過；全專案 `tsc --noEmit --incremental false` 通過。測試已新增並由既有 Playwright 三瀏覽器專案探索；實際執行結果待本批整合驗收填入。既有 `chart-detail-links.spec.ts` 仍負責各 Charizard 型態、鍵盤開啟、刷新與分享網址的完整回歸。
+元件及新增 E2E 檔案的 ESLint、Prettier 檢查通過；全專案 `tsc --noEmit --incremental false` 通過。既有 `chart-detail-links.spec.ts` 仍負責各 Charizard 型態、鍵盤開啟、刷新與分享網址的完整回歸。完整整合與遠端 CI 結果記錄於 [#25](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues/25)。
 
 隔離正式建置驗證：預設軸案例在 Chromium／Firefox／WebKit **3／3 通過**；切換能力、傳說條件與較窄視窗後的案例 **3／3 通過**。第二組先修正 checkbox 的非同步等待，再重跑；兩組均涵蓋放大、平移、縮小的畫面像素及框選行為。
 

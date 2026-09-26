@@ -22,4 +22,4 @@ macOS 的 WebKit 預設以 Option＋Tab 導覽原生按鈕及連結，因此該�
 
 ## 執行紀錄
 
-隔離正式版測試結果由本批整合驗收記錄。全專案 lint、typecheck 與 69 項單元測試已通過；完整三瀏覽器回歸包含既有滑鼠框選、型態連結及新鍵盤／觸控案例。
+新功能的三個案例已在隔離正式版分批通過 Chromium、Firefox、WebKit，共 9 項；WebKit 鍵盤案例調整為原生 Option＋Tab 後再次通過。全專案 lint、typecheck 與 69 項單元測試已通過。完整三瀏覽器回歸包含既有滑鼠框選、型態連結及新鍵盤／觸控案例；整合與遠端 CI 結果記錄於 [#25](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues/25)。
