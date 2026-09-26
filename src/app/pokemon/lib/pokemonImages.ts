@@ -1,36 +1,39 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import formImages from './pokemonFormImages.json';
+
 const IMAGE_DIR = path.join(process.cwd(), 'public', 'img');
+const FORM_IMAGES: Readonly<Record<string, string>> = formImages;
+let imageCache: Map<number, Set<string>> | null = null;
 
-let imageCache: Map<number, string | null> | null = null;
-
-function buildImageCache(): Map<number, string | null> {
-  const cache = new Map<number, string | null>();
+function ensureImageCache(): Map<number, Set<string>> {
+  if (imageCache) return imageCache;
+  const cache = new Map<number, Set<string>>();
   try {
-    const entries = fs.readdirSync(IMAGE_DIR);
-    for (const file of entries) {
-      const match = file.match(/^(\d{3})/);
+    for (const entry of fs.readdirSync(IMAGE_DIR, { withFileTypes: true })) {
+      if (!entry.isFile()) continue;
+      const match = /^(\d{3,4})[_-][^/\\]+\.(?:png|jpe?g|webp|avif)$/i.exec(entry.name);
       if (!match) continue;
-      const id = Number.parseInt(match[1], 10);
-      if (!cache.has(id)) {
-        cache.set(id, `/img/${file}`);
-      }
+      const id = Number(match[1]);
+      const files = cache.get(id) ?? new Set<string>();
+      files.add(entry.name);
+      cache.set(id, files);
     }
   } catch {
-    // Ignore missing directory or read errors; cache stays empty.
+    // Missing or unreadable image directories use the same placeholder as missing files.
   }
+  imageCache = cache;
   return cache;
 }
 
-function ensureImageCache(): Map<number, string | null> {
-  if (!imageCache) {
-    imageCache = buildImageCache();
+export function findPokemonImagePath(id: number, formId?: string): string | null {
+  const files = ensureImageCache().get(id);
+  if (!files) return null;
+  if (formId !== undefined) {
+    const file = FORM_IMAGES[`${id}:${formId}`];
+    return file && files.has(file) ? `/img/${file}` : null;
   }
-  return imageCache;
-}
-
-export function findPokemonImagePath(id: number): string | null {
-  const cache = ensureImageCache();
-  return cache.get(id) ?? null;
+  // Legacy species-only callers may use an unambiguous asset, never the first of several.
+  return files.size === 1 ? `/img/${files.values().next().value}` : null;
 }

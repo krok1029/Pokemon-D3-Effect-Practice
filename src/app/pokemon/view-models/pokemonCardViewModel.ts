@@ -98,7 +98,7 @@ export function buildPokemonCardViewModel(
     name: entry.name,
     isLegendary: entry.isLegendary,
     accentColor: primaryColor,
-    imagePath: findPokemonImagePath(entry.id),
+    imagePath: findPokemonImagePath(entry.id, formId),
     typeBadges: badges,
     stats,
     total,

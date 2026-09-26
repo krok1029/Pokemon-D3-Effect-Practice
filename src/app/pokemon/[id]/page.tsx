@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 
+import { PokemonDetailImage } from '../components/PokemonDetailImage';
 import { PokemonListReturnLink } from '../components/PokemonListReturnLink';
 import { loadPokemonFormViewModel } from '../presenter';
 
@@ -64,7 +65,12 @@ export default async function PokemonDetailRoute(props: PokemonDetailRouteProps)
         <Card className="border border-slate-200/70 shadow-sm dark:border-slate-800">
           <CardHeader className="items-center gap-3 pb-0">
             <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gradient-to-br from-white via-slate-50 to-slate-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
-              <PokemonImage pokemon={pokemon} />
+              <PokemonDetailImage
+                key={pokemon.imagePath}
+                src={pokemon.imagePath}
+                name={pokemon.name}
+                priority={pokemon.id <= 30}
+              />
             </div>
             <div className="text-center">
               <p className="text-xs font-semibold tracking-[0.08em] text-slate-500 uppercase dark:text-slate-400">
@@ -103,7 +109,7 @@ export default async function PokemonDetailRoute(props: PokemonDetailRouteProps)
               <span className="text-base">{pokemon.total}</span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              圖片來源為專案提供的本機圖檔。若未找到對應圖檔，將顯示灰階佔位符。
+              圖片來源為專案提供的本機圖檔。尚無此型態對應圖檔時，會顯示缺圖提示。
             </p>
           </CardContent>
         </Card>
@@ -138,27 +144,6 @@ export default async function PokemonDetailRoute(props: PokemonDetailRouteProps)
 
       {hasMatchups ? <TypeMatchupPanel pokemon={pokemon} /> : null}
     </section>
-  );
-}
-
-function PokemonImage({ pokemon }: { pokemon: PokemonDetailEntryViewModel }) {
-  if (!pokemon.imagePath) {
-    return (
-      <div className="flex h-full items-center justify-center bg-slate-200 text-sm font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-        無圖片
-      </div>
-    );
-  }
-
-  return (
-    <Image
-      src={pokemon.imagePath}
-      alt={pokemon.name}
-      fill
-      sizes="320px"
-      className="object-contain p-4"
-      priority={pokemon.id <= 30}
-    />
   );
 }
 
@@ -226,17 +211,12 @@ function MatchupPokemon({
 }) {
   return (
     <figure className="mx-auto flex w-full max-w-56 flex-col items-center rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/40">
-      {pokemon.imagePath ? (
-        <Image
-          src={pokemon.imagePath}
-          alt=""
-          width={128}
-          height={128}
-          className="h-32 w-32 object-contain"
-        />
-      ) : (
-        <div className="flex h-32 items-center text-sm text-slate-500">無圖片</div>
-      )}
+      <PokemonDetailImage
+        key={pokemon.imagePath}
+        src={pokemon.imagePath}
+        name={pokemon.name}
+        compact
+      />
       <figcaption className="mt-2 text-center text-sm font-semibold">
         {pokemon.name} · {roleLabel}
       </figcaption>

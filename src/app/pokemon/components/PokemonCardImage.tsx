@@ -49,7 +49,13 @@ export function PokemonCardImage({
       ) : null}
       {!src || state === 'error' ? (
         <div className="flex h-full items-center justify-center px-2 text-center text-xs text-slate-500 dark:text-slate-400">
-          {src ? '圖片暫無法載入' : '無圖片'}
+          {src ? (
+            '圖片暫無法載入'
+          ) : (
+            <span>
+              <span className="block">無圖片</span>尚無此型態對應圖檔
+            </span>
+          )}
         </div>
       ) : requested ? (
         <Image
