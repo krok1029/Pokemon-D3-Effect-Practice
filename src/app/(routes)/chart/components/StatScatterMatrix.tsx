@@ -7,6 +7,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import type { AverageStatKey } from '@/core/application/dto/AverageStatsDto';
 
+import { PokemonChartSelection } from './PokemonChartSelection';
 import {
   PokemonScatterPointViewModel,
   PokemonStatsMatrixViewModel,
@@ -122,6 +123,19 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
 
   const handleTypeReset = useCallback(() => {
     setHiddenTypeSlugs([]);
+  }, []);
+
+  const isPokemonSelected = useCallback(
+    (pokemon: PokemonScatterPointViewModel) =>
+      selectedPokemonKeys.includes(buildPokemonSelectionKey(pokemon)),
+    [selectedPokemonKeys],
+  );
+
+  const handlePokemonToggle = useCallback((pokemon: PokemonScatterPointViewModel) => {
+    const key = buildPokemonSelectionKey(pokemon);
+    setSelectedPokemonKeys((previous) =>
+      previous.includes(key) ? previous.filter((selected) => selected !== key) : [...previous, key],
+    );
   }, []);
 
   useEffect(() => {
@@ -507,6 +521,12 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
           onReset={handleTypeReset}
         />
 
+        <PokemonChartSelection
+          pokemons={filteredPokemons}
+          isSelected={isPokemonSelected}
+          onTogglePokemon={handlePokemonToggle}
+        />
+
         <div className="border-border bg-background overflow-auto rounded-lg border p-4 shadow-sm">
           <svg
             ref={svgRef}
@@ -516,7 +536,7 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
           />
         </div>
         <p className="text-muted-foreground text-xs">
-          提示：可切換兩個能力作為橫軸與縱軸，並拖曳散佈圖進行框選以檢視右側詳細資料。
+          提示：可切換兩個能力作為橫軸與縱軸，使用搜尋選取或拖曳散佈圖框選，以檢視選取結果的詳細資料。
         </p>
       </div>
 
@@ -679,7 +699,7 @@ function SelectionPanel({ selectedPokemons, statOptions, selectionCount }: Selec
 
       {selectedPokemons.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          從散佈圖中拖曳滑鼠框選區域，以檢視符合條件的寶可夢能力明細。
+          從散佈圖中拖曳滑鼠框選區域，或使用搜尋選取，以檢視符合條件的寶可夢能力明細。
         </p>
       ) : (
         <ul className="max-h-[720px] space-y-3 overflow-auto pr-1">

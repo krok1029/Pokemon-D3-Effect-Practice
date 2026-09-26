@@ -2,7 +2,7 @@
 
 import * as d3 from 'd3';
 import Image from 'next/image';
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import {
   Tooltip,
@@ -39,6 +39,7 @@ const MIN_BAR_WIDTH = 64;
 const MARGIN = { top: 32, right: 48, bottom: 140, left: 72 };
 
 export function TypeAverageStatsComparison({ viewModel }: TypeAverageStatsComparisonProps) {
+  const selectId = useId();
   const hasOptions = viewModel.statOptions.length > 0;
 
   const [selectedStatKey, setSelectedStatKey] = useState<AverageStatKey>(
@@ -91,12 +92,15 @@ export function TypeAverageStatsComparison({ viewModel }: TypeAverageStatsCompar
       <div className="space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <p className="text-foreground text-sm font-medium">比較能力</p>
+            <label htmlFor={selectId} className="text-foreground text-sm font-medium">
+              比較能力
+            </label>
             <p className="text-muted-foreground text-xs">
               依照選擇的能力值，由高至低排列各屬性的平均表現。
             </p>
           </div>
           <select
+            id={selectId}
             className="border-border bg-background text-foreground focus-visible:outline-primary w-full rounded-md border px-3 py-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-offset-2 sm:w-56"
             value={selectedStatKey}
             onChange={handleSelectChange}
