@@ -77,11 +77,11 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
     defaultXKey === defaultYKey ? (statKeys[2] ?? defaultYKey) : defaultYKey,
   );
   const [selectedPokemonKeys, setSelectedPokemonKeys] = useState<string[]>([]);
-  const [visibleTypeSlugs, setVisibleTypeSlugs] = useState<string[]>(allTypeSlugs);
-
-  useEffect(() => {
-    setVisibleTypeSlugs(allTypeSlugs);
-  }, [allTypeSlugs]);
+  const [hiddenTypeSlugs, setHiddenTypeSlugs] = useState<string[]>([]);
+  const visibleTypeSlugs = useMemo(
+    () => allTypeSlugs.filter((slug) => !hiddenTypeSlugs.includes(slug)),
+    [allTypeSlugs, hiddenTypeSlugs],
+  );
 
   const visibleTypeSlugSet = useMemo(() => new Set(visibleTypeSlugs), [visibleTypeSlugs]);
 
@@ -110,7 +110,7 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
   }, [pokemonByKey, visibleTypeSlugSet]);
 
   const handleTypeToggle = useCallback((slug: string) => {
-    setVisibleTypeSlugs((prev) => {
+    setHiddenTypeSlugs((prev) => {
       const hasSlug = prev.includes(slug);
       if (hasSlug) {
         return prev.filter((item) => item !== slug);
@@ -120,21 +120,28 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
   }, []);
 
   const handleTypeReset = useCallback(() => {
-    setVisibleTypeSlugs(allTypeSlugs);
-  }, [allTypeSlugs]);
+    setHiddenTypeSlugs([]);
+  }, []);
 
   useEffect(() => {
-    const nextX = statKeys[1] ?? statKeys[0] ?? 'hp';
-    const nextYCandidate = statKeys[0] ?? 'hp';
+    const nextX = statKeys.includes(xKey)
+      ? xKey
+      : defaultXKey !== yKey
+        ? defaultXKey
+        : (statKeys.find((key) => key !== yKey) ?? defaultXKey);
     const nextY =
-      nextX === nextYCandidate
-        ? (statKeys.find((key) => key !== nextX) ?? nextYCandidate)
-        : nextYCandidate;
+      statKeys.includes(yKey) && yKey !== nextX
+        ? yKey
+        : (statKeys.find((key) => key !== nextX) ?? nextX);
+
+    if (nextX === xKey && nextY === yKey) {
+      return;
+    }
 
     setXKey(nextX);
     setYKey(nextY);
     setSelectedPokemonKeys([]);
-  }, [statKeys]);
+  }, [defaultXKey, statKeys, xKey, yKey]);
 
   const handleXKeyChange = useCallback(
     (key: AverageStatKey) => {
