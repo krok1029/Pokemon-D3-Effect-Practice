@@ -313,7 +313,6 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
       .attr('font-weight', 600)
       .text(statLabelByKey.get(yKey) ?? yKey.toUpperCase());
 
-    const selectedSet = new Set(selectedPokemonKeys);
     const dotsGroup = plot
       .append('g')
       .attr('class', 'dots')
@@ -328,20 +327,7 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
           `dot ${pokemon.id}_pokemon_name_${pokemon.name.split(' ').join('_').toLowerCase()}`,
       )
       .attr('r', 4)
-      .attr('fill', (pokemon) => pokemon.color)
-      .attr('fill-opacity', (pokemon) =>
-        selectedSet.size === 0
-          ? 0.75
-          : selectedSet.has(buildPokemonSelectionKey(pokemon))
-            ? 1
-            : 0.15,
-      )
-      .attr('stroke', (pokemon) =>
-        selectedSet.has(buildPokemonSelectionKey(pokemon)) ? '#ffffff' : 'transparent',
-      )
-      .attr('stroke-width', (pokemon) =>
-        selectedSet.has(buildPokemonSelectionKey(pokemon)) ? 1.4 : 0,
-      );
+      .attr('fill', (pokemon) => pokemon.color);
 
     dots
       .append('title')
@@ -354,6 +340,9 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
         [layout.innerWidth, layout.innerHeight],
       ])
       .on('end', (event) => {
+        if (!event.sourceEvent) {
+          return;
+        }
         const selection = event.selection as [[number, number], [number, number]] | null;
         if (!selection) {
           setSelectedPokemonKeys((prev) => (prev.length === 0 ? prev : []));
@@ -401,6 +390,7 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
           .map((pokemon) => buildPokemonSelectionKey(pokemon));
 
         setSelectedPokemonKeys(ids);
+        brushGroup.call(brush.move, null);
       });
 
     const brushGroup = plot.append('g').attr('class', 'brush').call(brush);
@@ -482,6 +472,25 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
     return () => {
       root.on('.zoom', null);
     };
+  }, [filteredPokemons, layout, plotClipId, statLabelByKey, xKey, yKey]);
+
+  useEffect(() => {
+    const selectedSet = new Set(selectedPokemonKeys);
+    d3.select(svgRef.current)
+      .selectAll<SVGCircleElement, PokemonScatterPointViewModel>('circle.dot')
+      .attr('fill-opacity', (pokemon) =>
+        selectedSet.size === 0
+          ? 0.75
+          : selectedSet.has(buildPokemonSelectionKey(pokemon))
+            ? 1
+            : 0.15,
+      )
+      .attr('stroke', (pokemon) =>
+        selectedSet.has(buildPokemonSelectionKey(pokemon)) ? '#ffffff' : 'transparent',
+      )
+      .attr('stroke-width', (pokemon) =>
+        selectedSet.has(buildPokemonSelectionKey(pokemon)) ? 1.4 : 0,
+      );
   }, [filteredPokemons, layout, plotClipId, selectedPokemonKeys, statLabelByKey, xKey, yKey]);
 
   const selectedPokemons = useMemo(() => {
