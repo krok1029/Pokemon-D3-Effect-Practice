@@ -37,12 +37,12 @@ export class CsvPokemonMapper {
 
   private static readInteger(row: RawRow, column: string, index: number): number {
     const value = row[column];
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return Math.trunc(value);
+    if (typeof value === 'number' && Number.isSafeInteger(value)) {
+      return value;
     }
-    if (typeof value === 'string') {
-      const parsed = Number.parseInt(value.trim(), 10);
-      if (Number.isFinite(parsed)) {
+    if (typeof value === 'string' && /^[+-]?\d+$/.test(value.trim())) {
+      const parsed = Number(value.trim());
+      if (Number.isSafeInteger(parsed)) {
         return parsed;
       }
     }
