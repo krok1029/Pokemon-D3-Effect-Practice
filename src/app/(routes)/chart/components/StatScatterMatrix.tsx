@@ -2,6 +2,7 @@
 
 import * as d3 from 'd3';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { AverageStatKey } from '@/core/application/dto/AverageStatsDto';
@@ -10,7 +11,7 @@ import {
   PokemonScatterPointViewModel,
   PokemonStatsMatrixViewModel,
 } from '../view-models/pokemonStatsMatrixViewModel';
-import { translateType } from '../view-models/typeAverageStatsViewModel';
+import { buildTypeIconPath, translateType } from '../view-models/typeAverageStatsViewModel';
 
 type StatScatterMatrixProps = {
   viewModel: PokemonStatsMatrixViewModel;
@@ -20,9 +21,8 @@ const PLOT_WIDTH = 720;
 const PLOT_HEIGHT = 520;
 const PLOT_MARGIN = { top: 32, right: 24, bottom: 60, left: 60 };
 
-const sanitizePokemonName = (name: string) => name.trim().toLowerCase().replace(/\s+/g, '_');
-const buildPokemonSelectionKey = (pokemon: Pick<PokemonScatterPointViewModel, 'id' | 'name'>) =>
-  `${pokemon.id}-${sanitizePokemonName(pokemon.name)}`;
+const buildPokemonSelectionKey = (pokemon: Pick<PokemonScatterPointViewModel, 'id' | 'formId'>) =>
+  `${pokemon.id}-${pokemon.formId}`;
 const withAlphaColor = (color: string, alpha: number) => {
   const match = color.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
   if (!match) {
@@ -411,7 +411,11 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
           return false;
         }
         if (event.type === 'mousedown' || event.type === 'pointerdown') {
-          return event.button === 1;
+          if (event.button !== 1) {
+            return false;
+          }
+          event.preventDefault();
+          return true;
         }
         if (event.type === 'mousemove' || event.type === 'pointermove') {
           return (event.buttons & 4) === 4;
@@ -484,7 +488,12 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
         />
 
         <div className="border-border bg-background overflow-auto rounded-lg border p-4 shadow-sm">
-          <svg ref={svgRef} className="max-h-[600px] min-w-full" />
+          <svg
+            ref={svgRef}
+            role="img"
+            aria-label="寶可夢能力散佈圖"
+            className="max-h-[600px] min-w-full"
+          />
         </div>
         <p className="text-muted-foreground text-xs">
           提示：可切換兩個能力作為橫軸與縱軸，並拖曳散佈圖進行框選以檢視右側詳細資料。
@@ -576,9 +585,12 @@ function TypeLegend({ options, activeSlugs, onToggle, onReset }: TypeLegendProps
   const isAllActive = activeSlugs.length === options.length;
 
   return (
-    <section className="border-border bg-muted/20 rounded-lg border p-3 shadow-sm">
+    <section
+      aria-label="主屬性篩選"
+      className="border-border bg-muted/20 rounded-lg border p-3 shadow-sm"
+    >
       <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-        <span>屬性篩選</span>
+        <span>主屬性篩選</span>
         <button
           type="button"
           className="text-primary disabled:text-muted-foreground"
@@ -588,6 +600,9 @@ function TypeLegend({ options, activeSlugs, onToggle, onReset }: TypeLegendProps
           重設
         </button>
       </div>
+      <p className="text-muted-foreground mt-2 text-xs">
+        散佈圖依主屬性篩選與著色；圖鑑的屬性篩選則比對主、副屬性。
+      </p>
       <div className="mt-2 flex flex-wrap gap-2">
         {options.map((option) => {
           const isActive = activeSlugs.includes(option.slug);
@@ -633,7 +648,10 @@ type SelectionPanelProps = {
 
 function SelectionPanel({ selectedPokemons, statOptions, selectionCount }: SelectionPanelProps) {
   return (
-    <aside className="border-border bg-background max-h-[800px] w-full max-w-sm space-y-3 rounded-lg border p-4 shadow-sm">
+    <aside
+      aria-label="選取寶可夢"
+      className="border-border bg-background max-h-[800px] w-full max-w-sm space-y-3 rounded-lg border p-4 shadow-sm"
+    >
       <div className="flex items-center justify-between">
         <h3 className="text-foreground text-sm font-semibold">選取寶可夢</h3>
         <span className="text-muted-foreground text-xs">共 {selectionCount} 隻</span>
@@ -647,18 +665,35 @@ function SelectionPanel({ selectedPokemons, statOptions, selectionCount }: Selec
         <ul className="max-h-[720px] space-y-3 overflow-auto pr-1">
           {selectedPokemons.map((pokemon) => (
             <li
-              key={`${pokemon.id}_pokemon_name_${pokemon.name.split(' ').join('_').toLowerCase()}`}
+              key={buildPokemonSelectionKey(pokemon)}
               className="border-border bg-card rounded-md border p-3 shadow-sm transition hover:shadow"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-foreground text-sm font-medium">
+                  <Link
+                    href={pokemon.detailHref}
+                    prefetch={false}
+                    aria-label={`查看 ${pokemon.name} 詳情`}
+                    className="text-primary rounded-sm text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+                  >
                     #{pokemon.id.toString().padStart(3, '0')} {pokemon.name}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {pokemon.typeLabel}
-                    {pokemon.secondaryType ? `／${translateType(pokemon.secondaryType)}` : ''}
-                  </p>
+                  </Link>
+                  <div className="text-muted-foreground mt-1 flex flex-wrap gap-2 text-xs">
+                    {[pokemon.primaryType, pokemon.secondaryType]
+                      .filter((type): type is string => Boolean(type?.trim()))
+                      .map((type) => (
+                        <span key={type} className="inline-flex items-center gap-1">
+                          <Image
+                            src={buildTypeIconPath(type)}
+                            alt=""
+                            width={16}
+                            height={16}
+                            aria-hidden="true"
+                          />
+                          {translateType(type)}
+                        </span>
+                      ))}
+                  </div>
                 </div>
                 {pokemon.isLegendary ? (
                   <span className="text-xs font-semibold text-amber-500">傳說</span>

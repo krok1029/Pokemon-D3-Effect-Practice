@@ -1,5 +1,6 @@
 import { AverageStatKey } from '@/core/application/dto/AverageStatsDto';
 import { PokemonStatsEntryDto } from '@/core/application/dto/PokemonStatsDto';
+import { createPokemonFormId } from '@/core/domain/valueObjects/PokemonFormId';
 
 import { STAT_LABEL_MAP } from './averageStatsViewModel';
 import {
@@ -11,6 +12,8 @@ import {
 
 export type PokemonScatterPointViewModel = {
   id: number;
+  formId: string;
+  detailHref: string;
   name: string;
   isLegendary: boolean;
   primaryType: string;
@@ -42,8 +45,11 @@ export function buildPokemonStatsMatrixViewModel(
 
   const pokemons = entries.map((entry) => {
     const slug = normalizeTypeSlug(entry.primaryType);
+    const formId = entry.formId ?? createPokemonFormId(entry.name);
     return {
       id: entry.id,
+      formId,
+      detailHref: `/pokemon/${entry.id}?${new URLSearchParams({ form: formId })}`,
       name: entry.name,
       isLegendary: entry.isLegendary,
       primaryType: entry.primaryType,
