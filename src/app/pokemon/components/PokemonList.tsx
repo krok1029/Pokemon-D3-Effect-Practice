@@ -19,7 +19,13 @@ type PokemonListProps = { initialPage: PokemonListPage };
 
 export function PokemonList({ initialPage }: PokemonListProps) {
   const { typeOptions } = initialPage;
-  const [navigationVersion, setNavigationVersion] = useState(0);
+  const [navigation, setNavigation] = useState({ initialPage, version: 0 });
+
+  // Route navigation delivers a new seed; scroll-driven history updates keep the same seed.
+  if (navigation.initialPage !== initialPage) {
+    setNavigation({ initialPage, version: navigation.version + 1 });
+  }
+
   const searchParams = useSearchParams();
   const query = searchParams?.toString() ?? '';
   const validTypes = useMemo(() => typeOptions.map((type) => type.slug), [typeOptions]);
@@ -47,7 +53,7 @@ export function PokemonList({ initialPage }: PokemonListProps) {
     setIsInteractive(true);
     const finishEditing = () => {
       editingSearch.current = false;
-      setNavigationVersion((value) => value + 1);
+      setNavigation((current) => ({ ...current, version: current.version + 1 }));
     };
     window.addEventListener('popstate', finishEditing);
     return () => window.removeEventListener('popstate', finishEditing);
@@ -170,7 +176,7 @@ export function PokemonList({ initialPage }: PokemonListProps) {
       </fieldset>
 
       <PokemonFeed
-        key={`${pokemonListHref(filters)}:${navigationVersion}`}
+        key={`${pokemonListHref(filters)}:${navigation.version}`}
         filters={filters}
         initialPage={initialPage}
         requestedPage={readPokemonListPage(new URLSearchParams(query))}

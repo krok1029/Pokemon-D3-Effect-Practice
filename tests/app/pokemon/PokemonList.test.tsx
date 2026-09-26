@@ -7,6 +7,10 @@ import { readPokemonListFilters } from '@/app/pokemon/lib/pokemonListQuery';
 import type { PokemonDetailEntryViewModel } from '@/app/pokemon/view-models/pokemonDetailViewModel';
 import type { PokemonListPage } from '@/app/pokemon/view-models/pokemonListViewModel';
 
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
 vi.mock('next/image', () => ({
   __esModule: true,
   default: ({ alt, src }: { alt: string; src: string | { src: string } }) => (
@@ -90,6 +94,47 @@ afterEach(() => {
 });
 
 describe('PokemonList', () => {
+  it('replaces a deep batch when route navigation supplies a new seed in Strict Mode', () => {
+    // Arrange
+    window.history.replaceState(null, '', '/pokemon?page=3');
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const deepPage = {
+      ...makePage([buildPokemon({ id: 37, name: 'Alolan Vulpix' })]),
+      page: 3,
+      total: 72,
+    };
+    const firstPage = {
+      ...makePage([buildPokemon({ id: 1, name: 'Bulbasaur' })]),
+      total: 72,
+    };
+    const target = render(
+      <React.StrictMode>
+        <PokemonList initialPage={deepPage} />
+      </React.StrictMode>,
+    );
+    expect(screen.getByTestId('loaded-range')).toHaveTextContent('已載入第 49–72 筆');
+
+    // Act
+    window.history.pushState(null, '', '/pokemon');
+    target.rerender(
+      <React.StrictMode>
+        <PokemonList initialPage={firstPage} />
+      </React.StrictMode>,
+    );
+
+    // Assert
+    expect(screen.getByTestId('loaded-range')).toHaveTextContent('已載入第 1–24 筆');
+    expect(screen.getByText('Bulbasaur')).toBeInTheDocument();
+    expect(screen.queryByText('Alolan Vulpix')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '載入前 24 筆' })).not.toBeInTheDocument();
+  });
+
   it('renders pokemon cards with images, badges and details', () => {
     const pokemons = [
       buildPokemon({
