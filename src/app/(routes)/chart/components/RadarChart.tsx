@@ -54,22 +54,6 @@ export function RadarChart({
     rootSelection.selectAll('*').remove();
     containerSelection.selectAll('.radar-tooltip').remove();
 
-    const documentStyles = window.getComputedStyle(document.documentElement);
-    const parseColor = (variable: string, fallback: string) => {
-      const raw = documentStyles.getPropertyValue(variable).trim();
-      const parsed = d3.color(raw);
-      return parsed ?? d3.color(fallback);
-    };
-
-    const primaryColor = parseColor('--primary', '#2563eb')!;
-    const borderColor = parseColor('--border', '#e4e4e7')!;
-    const mutedForegroundColor = parseColor('--muted-foreground', '#6b7280')!;
-
-    const fillColor = primaryColor.copy({ opacity: 0.15 }).formatRgb();
-    const strokeColor = primaryColor.formatRgb();
-    const gridColor = borderColor.copy({ opacity: 0.7 }).formatRgb();
-    const axisLabelColor = mutedForegroundColor.formatRgb();
-
     const dimension = size;
     const viewBoxMargin = 60;
     const radius = dimension / 2 - viewBoxMargin;
@@ -113,7 +97,8 @@ export function RadarChart({
         .append('path')
         .attr('d', levelLine(buildLevelPoints(level)))
         .attr('fill', 'none')
-        .attr('stroke', gridColor)
+        .attr('stroke', 'var(--border)')
+        .attr('stroke-opacity', 0.7)
         .attr('stroke-width', 0.5);
     }
 
@@ -136,7 +121,8 @@ export function RadarChart({
           .attr('y1', 0)
           .attr('x2', axisX)
           .attr('y2', axisY)
-          .attr('stroke', gridColor)
+          .attr('stroke', 'var(--border)')
+          .attr('stroke-opacity', 0.7)
           .attr('stroke-width', 0.5);
 
         const labelOffset = 5;
@@ -149,7 +135,7 @@ export function RadarChart({
           .attr('y', labelY)
           .attr('text-anchor', Math.abs(labelX) < 4 ? 'middle' : labelX > 0 ? 'start' : 'end')
           .attr('dominant-baseline', labelY > 8 ? 'hanging' : labelY < -8 ? 'baseline' : 'middle')
-          .attr('fill', axisLabelColor)
+          .attr('fill', 'var(--muted-foreground)')
           .attr('font-size', 12)
           .text(axisData.label);
       });
@@ -177,8 +163,9 @@ export function RadarChart({
       .append('path')
       .datum(radarPoints)
       .attr('d', radarLine)
-      .attr('fill', fillColor)
-      .attr('stroke', strokeColor)
+      .attr('fill', 'var(--primary)')
+      .attr('fill-opacity', 0.15)
+      .attr('stroke', 'var(--primary)')
       .attr('stroke-width', 2);
 
     const pointsSelection = chartGroup
@@ -190,7 +177,7 @@ export function RadarChart({
       .attr('cx', (point) => point.x)
       .attr('cy', (point) => point.y)
       .attr('r', 4)
-      .attr('fill', strokeColor);
+      .attr('fill', 'var(--primary)');
 
     pointsSelection.each(function appendTitle(point) {
       d3.select(this)

@@ -180,18 +180,6 @@ function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartP
       return;
     }
 
-    const documentStyles = window.getComputedStyle(document.documentElement);
-    const parseColor = (variable: string, fallback: string) => {
-      const raw = documentStyles.getPropertyValue(variable).trim();
-      const parsed = d3.color(raw);
-      return parsed ?? d3.color(fallback);
-    };
-
-    const primaryColor = parseColor('--primary', '#2563eb')!;
-    const borderColor = parseColor('--border', '#e4e4e7')!;
-    const mutedColor = parseColor('--muted-foreground', '#6b7280')!;
-    const foregroundColor = parseColor('--foreground', '#0f172a')!;
-
     const { width, height, innerWidth, innerHeight, xScale, yScale } = layout;
 
     const svg = root
@@ -214,14 +202,15 @@ function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartP
       .attr('x2', innerWidth)
       .attr('y1', (tick) => yScale(tick))
       .attr('y2', (tick) => yScale(tick))
-      .attr('stroke', borderColor.copy({ opacity: 0.4 }).formatRgb())
+      .attr('stroke', 'var(--border)')
+      .attr('stroke-opacity', 0.4)
       .attr('stroke-width', 0.5)
       .attr('stroke-dasharray', '4 4');
 
     const yAxis = d3.axisLeft(yScale).ticks(5).tickSizeOuter(0);
     const yAxisGroup = chartGroup.append('g').attr('class', 'y-axis').call(yAxis);
-    yAxisGroup.selectAll('text').attr('fill', mutedColor.formatRgb()).attr('font-size', 12);
-    yAxisGroup.selectAll('path').attr('stroke', borderColor.formatRgb()).attr('stroke-width', 0.5);
+    yAxisGroup.selectAll('text').attr('fill', 'var(--muted-foreground)').attr('font-size', 12);
+    yAxisGroup.selectAll('path').attr('stroke', 'var(--border)').attr('stroke-width', 0.5);
 
     const barsGroup = chartGroup.append('g').attr('class', 'bars');
 
@@ -239,7 +228,8 @@ function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartP
       .attr('height', (entry) => innerHeight - yScale(entry.value))
       .attr('rx', 6)
       .attr('ry', 6)
-      .attr('fill', primaryColor.copy({ opacity: 0.85 }).formatRgb())
+      .attr('fill', 'var(--primary)')
+      .attr('fill-opacity', 0.85)
       .append('title')
       .text(
         (entry) =>
@@ -250,7 +240,7 @@ function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartP
       .append('text')
       .attr('x', xScale.bandwidth() / 2)
       .attr('y', (entry) => yScale(entry.value) - 8)
-      .attr('fill', foregroundColor.formatRgb())
+      .attr('fill', 'var(--foreground)')
       .attr('font-size', 12)
       .attr('font-weight', 600)
       .attr('text-anchor', 'middle')
@@ -263,7 +253,8 @@ function TypeAverageStatsBarChart({ data, statLabel }: TypeAverageStatsBarChartP
       .attr('x2', innerWidth)
       .attr('y1', innerHeight)
       .attr('y2', innerHeight)
-      .attr('stroke', borderColor.copy({ opacity: 0.5 }).formatRgb())
+      .attr('stroke', 'var(--border)')
+      .attr('stroke-opacity', 0.5)
       .attr('stroke-width', 1);
 
     return () => {
