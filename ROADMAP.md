@@ -27,7 +27,19 @@
 - **散佈圖互動**：不持久化跨頁框選／縮放，也未提供手機觸控框選。
 - **資料與架構**：CSV Repository 及圖片索引維持程序內快取；相剋是固定屬性矩陣，不包含特性、招式、道具或完整傷害計算。相剋算法仍位於 App ViewModel，沒有為本輪功能擴大重構。
 
-## 下一階段：先定義 2～4 隻寶可夢比較
+## 近期優先：修正現有功能與驗收缺口
+
+2026-09-26 完整三瀏覽器 E2E 237 項通過；額外操作檢查發現原測試未覆蓋的問題。詳細重現、截圖與驗證範圍見 [現有功能盤點](docs/verification/feature-audit-2026-09-26.md)。
+
+1. [#21](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues/21)：深層圖鑑點主要導覽後，網址回首頁但仍顯示舊批次。
+2. [#22](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues/22)：同頁切換排除傳說時，保留散佈圖的能力軸與主屬性條件。
+3. [#23](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues/23)：裁切放大／平移後超出繪圖區的資料點，避免遮住座標軸。
+4. [#24](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues/24)：補圖表手機／鍵盤的選取入口與下拉選單標籤。
+5. [#25](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues/25)：建立隔離的 E2E 命令與 CI 自動回歸，補平均圖表 UI 驗收。
+
+前三項為已重現的功能問題；後兩項為操作與交付保障補強。本次已開票，尚未修正。
+
+## 後續候選：定義 2～4 隻寶可夢比較
 
 建議優先延續現有探索流程，讓使用者從圖鑑或散佈圖挑選特定型態，並排比較六項能力及雷達圖。此項尚未實作，開發前先確定最小規格：
 

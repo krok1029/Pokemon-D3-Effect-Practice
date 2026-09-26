@@ -41,4 +41,4 @@
 
 使用者已授權需求確定後隨功能調整測試、fixture 與必要設定，取代先前文件整理階段的「測試先不要改」。#14～#20 均已有實作及驗收紀錄：[第一批](docs/verification/roadmap-batch-1.md)、[#19 無限捲動](docs/verification/infinite-scroll.md)、[#16 圖片對應](docs/verification/image-form-mapping.md)、[#20 圖表連結](docs/verification/chart-detail-links.md)。後續補入 129 張官方圖的結果見 [補圖驗收](docs/verification/official-image-download.md)。驗收以頁面與公開網址為主，歷史測試結果不代表本次已重新執行。票券位於 [GitHub Issues](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues)。
 
-下一階段建議先定義 2～4 隻寶可夢比較的最小規格；目前尚未實作。沿用穩定型態識別，先釐清跨頁選取、移除與分享網址，再進入開發。
+近期優先處理 #21～#23 的已重現問題（圖鑑導覽批次、同頁傳說切換、散佈圖裁切），再補 #24／#25 的操作與回歸保障；見 [現有功能盤點](docs/verification/feature-audit-2026-09-26.md)。2～4 隻寶可夢比較仍是待定規格的候選，尚未實作。
