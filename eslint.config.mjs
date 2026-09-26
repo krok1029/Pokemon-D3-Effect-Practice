@@ -22,7 +22,7 @@ const prettierPlugin = await loadPlugin('eslint-plugin-prettier');
 
 const config = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
-  globalIgnores(['.next/**', 'node_modules/**']),
+  globalIgnores(['.next/**', 'node_modules/**', 'test-results/**', 'playwright-report/**']),
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
     plugins: {

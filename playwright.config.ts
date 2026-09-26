@@ -1,16 +1,30 @@
 import { defineConfig, devices } from 'playwright/test';
 
-const PORT = Number(process.env.PORT ?? 3000);
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${PORT}`;
+const baseURL = process.env.PLAYWRIGHT_BASE_URL;
+if (!baseURL)
+  throw new Error('Use yarn test:e2e to build and start an isolated production server.');
+const averages = process.env.E2E_SUITE === 'averages';
+const workers = Number(process.env.E2E_WORKERS ?? 1);
+if (!Number.isInteger(workers) || workers < 1)
+  throw new Error('E2E_WORKERS must be a positive integer.');
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testMatch: averages ? '**/average-charts.spec.ts' : '**/*.spec.ts',
+  testIgnore: averages ? [] : ['**/average-charts.spec.ts'],
+  outputDir: process.env.E2E_OUTPUT_DIR ?? 'test-results',
+  forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  fullyParallel: true,
-  reporter: process.env.CI ? 'dot' : 'list',
+  fullyParallel: false,
+  workers,
+  reporter: [
+    [process.env.CI ? 'dot' : 'list'],
+    ['html', { outputFolder: process.env.E2E_REPORT_DIR ?? 'playwright-report', open: 'never' }],
+  ],
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
     headless: true,
   },
   projects: [
@@ -27,12 +41,4 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'] },
     },
   ],
-  webServer: process.env.PLAYWRIGHT_BASE_URL
-    ? undefined
-    : {
-        command: 'yarn dev',
-        url: baseURL,
-        reuseExistingServer: !process.env.CI,
-        timeout: 120 * 1000,
-      },
 });

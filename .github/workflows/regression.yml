@@ -1,0 +1,49 @@
+name: Regression
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regression-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      E2E_WORKERS: 1
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Enable pinned Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@4.9.4 --activate
+      - name: Install locked dependencies
+        run: yarn install --immutable
+      - name: Lint
+        run: yarn lint
+      - name: Typecheck
+        run: yarn typecheck
+      - name: Unit tests
+        run: yarn test:unit
+      - name: Install browser runtimes
+        run: yarn playwright install --with-deps chromium firefox webkit
+      - name: Build and run isolated production regression
+        run: yarn test:e2e
+      - name: Preserve failure logs, reports and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14

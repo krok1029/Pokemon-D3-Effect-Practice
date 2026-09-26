@@ -11,7 +11,7 @@
     "test": "vitest",
     "test:unit": "vitest run",
     "coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "node scripts/run-e2e.mjs"
   },
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.2.8",
