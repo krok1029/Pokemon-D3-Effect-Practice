@@ -18,6 +18,7 @@ import {
   readPokemonListPage,
   POKEMON_PAGE_SIZE,
 } from '../lib/pokemonListQuery';
+import { createPokemonSearchMatcher } from '../lib/pokemonSearch';
 
 function getTypeOptions(entries: PokemonStatsEntryDto[]): PokemonTypeBadgeViewModel[] {
   const types = new Set(
@@ -42,7 +43,7 @@ export function buildPokemonListPage(entries: PokemonStatsEntryDto[], params: UR
     params,
     typeOptions.map((type) => type.slug),
   );
-  const keyword = filters.search.trim().toLowerCase();
+  const matchesSearch = createPokemonSearchMatcher(filters.search);
   const filtered = entries
     .filter(
       (entry) =>
@@ -51,9 +52,7 @@ export function buildPokemonListPage(entries: PokemonStatsEntryDto[], params: UR
           [entry.primaryType, entry.secondaryType].some(
             (type) => type && normalizeTypeSlug(type) === filters.typeFilter,
           )) &&
-        (!keyword ||
-          entry.name.toLowerCase().includes(keyword) ||
-          String(entry.id).includes(keyword)),
+        matchesSearch(entry),
     )
     .sort((a, b) => a.id - b.id);
   const requested = readPokemonListPage(params);

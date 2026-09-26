@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useId, useMemo, useState } from 'react';
 
+import { createPokemonSearchMatcher } from '@/app/pokemon/lib/pokemonSearch';
+
 import type { PokemonScatterPointViewModel } from '../view-models/pokemonStatsMatrixViewModel';
 
 type PokemonChartSelectionProps = {
@@ -20,15 +22,10 @@ export function PokemonChartSelection({
 }: PokemonChartSelectionProps) {
   const id = useId();
   const [search, setSearch] = useState('');
-  const query = search.trim().toLowerCase();
+  const query = search.trim();
   const matches = useMemo(() => {
     if (!query) return [];
-    const numberQuery = /^\d+$/.test(query) ? String(Number(query)) : null;
-    return pokemons.filter(
-      (pokemon) =>
-        pokemon.name.toLowerCase().includes(query) ||
-        (numberQuery !== null && String(pokemon.id).includes(numberQuery)),
-    );
+    return pokemons.filter(createPokemonSearchMatcher(query));
   }, [pokemons, query]);
 
   return (
