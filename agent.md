@@ -42,3 +42,5 @@
 使用者已授權需求確定後隨功能調整測試、fixture 與必要設定，取代先前文件整理階段的「測試先不要改」。#14～#20 均已有實作及驗收紀錄：[第一批](docs/verification/roadmap-batch-1.md)、[#19 無限捲動](docs/verification/infinite-scroll.md)、[#16 圖片對應](docs/verification/image-form-mapping.md)、[#20 圖表連結](docs/verification/chart-detail-links.md)。後續補入 129 張官方圖的結果見 [補圖驗收](docs/verification/official-image-download.md)。驗收以頁面與公開網址為主，歷史測試結果不代表本次已重新執行。票券位於 [GitHub Issues](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues)。
 
 #21～#25 已補上圖鑑導覽重設、分析條件保留、散佈圖裁切、搜尋選取與隔離回歸。`yarn test:e2e` 在暫存工作目錄建置，依序以完整 CSV 與平均圖 fixture 執行三瀏覽器測試，不使用根 `.next` 或既有開發服務；預設一個 worker。輸出位於 `test-results/regression-*`，GitHub Actions 失敗時保存報告及 trace。各項驗收見 [ROADMAP](ROADMAP.md)。2～4 隻寶可夢比較仍是待定規格的候選，尚未實作。
+
+第二次盤點後修正五項：選取樣式不再重建散佈圖手勢、平均／雷達圖直接使用主題 CSS 顏色、圖鑑與圖表共用編號及名稱搜尋正規化、列表請求 15 秒逾時後可重試、CSV 整數入口不再截斷非法值。結果與重現命令見 [平行修正驗收](docs/verification/parallel-fixes-2026-09-26.md)。詳細頁標題、預設 404 與 Geist 字型 class 問題仍是後續小項目。

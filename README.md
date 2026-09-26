@@ -15,6 +15,8 @@
 
 散佈圖支援主屬性圖例篩選、拖曳框選、選取結果清單、縮放按鈕與滑鼠中鍵平移。也可用名稱或編號搜尋，再以鍵盤或觸控選取並開啟指定型態；搜尋沿用目前傳說與主屬性條件。同頁切換傳說條件會保留能力軸與主屬性偏好。縮放範圍由元件的 `scaleExtent` 定義，目前是 0.5～4 倍；資料點保持在繪圖區內，滑鼠滾輪縮放刻意停用。
 
+圖鑑與圖表共用搜尋規則：`#025`、`025`、`#25` 精確查詢編號 25，`25` 保留編號部分比對。名稱搜尋不分大小寫，忽略空白、句點與直／彎單引號，因此 `Mr Mime`、`Farfetch’d` 也可找到對應型態；中文名稱仍未提供。
+
 ## 快速開始
 
 專案透過 `.nvmrc` 指定 Node.js 24，使用 nvm 時可先執行 `nvm use`。套件管理器指定 Yarn 4.9.4，並透過 `.yarnrc.yml` 使用 `node_modules` 模式。
@@ -62,6 +64,8 @@ POKEMON_DATA_PATH=/absolute/path/to/pokemon.csv yarn dev
 
 資料首次查詢時讀入 Repository 記憶體快取；目前沒有自動重新載入機制。更新 CSV 或環境變數後，重新啟動服務。
 
+CSV 編號與六項能力必須是安全範圍內的完整十進位整數；非法內容會回報資料筆次與欄位，不會把小數或 `35oops` 截斷成整數。
+
 ## 技術與架構
 
 目前宣告的主要版本為 Next.js 15.4.6、React 19.1.0、TypeScript 5、D3 7、Tailwind CSS 4、Yarn 4.9.4。介面使用 shadcn/ui、Radix Tooltip 與 next-themes；CSV 使用 csv-parse；依賴注入使用 tsyringe 與 reflect-metadata。精確套件宣告與鎖定結果以 `package.json`、`yarn.lock` 為準。
@@ -97,6 +101,8 @@ Vitest 涵蓋 Domain、UseCase、CSV、DI 及圖鑑頁面；Playwright 以實際
 已完成 #20：散佈圖框選結果可開啟、刷新及分享正確型態的詳細頁，圖例明示依主屬性篩選。跨頁後不保留散佈圖框選及縮放狀態。
 
 後續盤點的 #21～#25 已補上：圖鑑主要導覽重設批次、傳說切換保留分析條件、散佈圖裁切、鍵盤／觸控搜尋選取及隔離 E2E／CI。原始問題與歷史結果見 [現有功能盤點](docs/verification/feature-audit-2026-09-26.md)，修正驗收入口見 [ROADMAP](ROADMAP.md)。下一個候選是定義「2～4 隻寶可夢比較」的最小規格；比較功能目前尚未實作。
+
+第二次盤點後補上散佈圖選取後連續平移、明暗圖表可讀性、跨入口搜尋格式、圖鑑請求逾時與 CSV 整數驗證。圖鑑請求超過 15 秒會保留已載入卡片並提供同批重試；詳見 [平行修正驗收](docs/verification/parallel-fixes-2026-09-26.md)。
 
 - [ROADMAP.md](ROADMAP.md)：待辦優先順序、原因與完成條件。
 - [guide.md](guide.md)：資料流程、互動狀態、分層及維護方式。
