@@ -1,6 +1,6 @@
 # 維護交接
 
-專案是使用本機 CSV 的寶可夢圖鑑與 D3 統計網站。此摘要於 2026-09-19 對照實作整理；產品入口見 [README](README.md)，流程細節見 [guide](guide.md)，未實作項目見 [ROADMAP](ROADMAP.md)。不要把待辦描述當成已完成功能。
+專案是使用本機 CSV 的寶可夢圖鑑與 D3 統計網站。此摘要於 2026-09-26 對照實作整理；產品入口見 [README](README.md)，流程細節見 [guide](guide.md)，未實作項目見 [ROADMAP](ROADMAP.md)。不要把待辦描述當成已完成功能。
 
 ## 接手順序
 
@@ -12,7 +12,7 @@
 
 - Next.js 15.4.6 App Router、React 19.1.0、TypeScript 5、D3 7、Tailwind CSS 4、shadcn/ui、Radix Tooltip、next-themes。
 - Yarn 4.9.4，實際使用 `node_modules`，不是 Plug'n'Play。
-- `/chart` 提供雷達、依屬性平均直條圖、單一可切換軸的互動散佈圖。
+- `/chart` 提供雷達、依屬性平均直條圖、單一可切換軸的互動散佈圖；框選結果連到正確型態詳細頁，支援鍵盤開啟與分享網址。
 - `/pokemon` 提供網址同步的搜尋與篩選；`/pokemon/[id]?form=...` 提供指定型態的能力及攻擊／被攻擊對照；`/` 提供網站介紹及兩個主要入口。
 - `GET /api/pokemon` 提供每批 24 筆的圖鑑資料；沒有外部即時資料服務或資料庫。
 - 圖鑑使用無限捲動；累積超過 48 筆啟用 TanStack Virtual。`page` 與卡片錨點保留返回位置，圖片按需載入。
@@ -32,10 +32,13 @@
 - `POKEMON_DATA_PATH` 優先於測試 fixture 及預設 CSV；資料首次查詢時讀取並快取。
 - 相剋不是取自 CSV，也不是完整傷害計算；攻擊取自身屬性招式對單一目標屬性的最佳倍率，保留免疫與抗性。
 - 型態身份由圖鑑編號與穩定的 `formId` 組成，網址不可使用 CSV 列索引；碰撞會明確報錯。
-- 圖片查找尚未支援可靠的型態識別及四位數編號。細節與後續工作見 ROADMAP。
+- 圖片索引完整解析三位及四位編號；`app/pokemon/lib/pokemonFormImages.json` 以 `編號:formId` 明確對應檔名。列表與詳細頁共用選圖規則，不依賴檔案順序。補入 129 張官方圖後共有 1,025 列對照；剩 7 列（Ash-Greninja，以及 Pumpkaboo／Gourgeist 各 Small、Large、Super 尺寸）顯示佔位。來源、校驗及缺圖原因見 `data/pokemon-image-sources.json`；新增資源須先確認型態再更新對照。
+- 散佈圖選取以編號與 `formId` 區分身份，圖例明示主屬性篩選；目前不保留跨頁框選／縮放，也沒有手機觸控框選。
 
 ## 驗證與本次範圍
 
 `yarn test:unit` 一次執行 Vitest；`yarn test` 通常進入監看模式。Playwright 案例位於 `tests/e2e`，由 `yarn test:e2e` 執行，並從 Vitest 探索範圍排除。
 
-使用者已授權需求確定後隨功能調整測試、fixture 與必要設定，取代先前文件整理階段的「測試先不要改」。第一批實作範圍為 #14、#15、#17、#18；驗收以頁面與公開網址為主，結果見 [驗收紀錄](docs/verification/roadmap-batch-1.md)。票券位於 [GitHub Issues](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues)。
+使用者已授權需求確定後隨功能調整測試、fixture 與必要設定，取代先前文件整理階段的「測試先不要改」。#14～#20 均已有實作及驗收紀錄：[第一批](docs/verification/roadmap-batch-1.md)、[#19 無限捲動](docs/verification/infinite-scroll.md)、[#16 圖片對應](docs/verification/image-form-mapping.md)、[#20 圖表連結](docs/verification/chart-detail-links.md)。後續補入 129 張官方圖的結果見 [補圖驗收](docs/verification/official-image-download.md)。驗收以頁面與公開網址為主，歷史測試結果不代表本次已重新執行。票券位於 [GitHub Issues](https://github.com/krok1029/Pokemon-D3-Effect-Practice/issues)。
+
+下一階段建議先定義 2～4 隻寶可夢比較的最小規格；目前尚未實作。沿用穩定型態識別，先釐清跨頁選取、移除與分享網址，再進入開發。
