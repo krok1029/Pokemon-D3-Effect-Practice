@@ -3,7 +3,7 @@
 import * as d3 from 'd3';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import type { AverageStatKey } from '@/core/application/dto/AverageStatsDto';
 
@@ -42,6 +42,7 @@ const withAlphaColor = (color: string, alpha: number) => {
 };
 
 export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
+  const plotClipId = useId();
   const statKeys = useMemo(
     () => viewModel.statOptions.map((option) => option.key),
     [viewModel.statOptions],
@@ -255,6 +256,15 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
     root.attr('viewBox', `0 0 ${layout.width} ${layout.height}`).attr('width', '100%');
     root.on('.zoom', null);
 
+    root
+      .append('defs')
+      .append('clipPath')
+      .attr('id', plotClipId)
+      .attr('clipPathUnits', 'userSpaceOnUse')
+      .append('rect')
+      .attr('width', layout.innerWidth)
+      .attr('height', layout.innerHeight);
+
     const plot = root
       .append('g')
       .attr('transform', `translate(${PLOT_MARGIN.left}, ${PLOT_MARGIN.top})`);
@@ -290,7 +300,10 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
       .text(statLabelByKey.get(yKey) ?? yKey.toUpperCase());
 
     const selectedSet = new Set(selectedPokemonKeys);
-    const dotsGroup = plot.append('g').attr('class', 'dots');
+    const dotsGroup = plot
+      .append('g')
+      .attr('class', 'dots')
+      .attr('clip-path', `url(#${plotClipId})`);
     const dots = dotsGroup
       .selectAll('circle.dot')
       .data(filteredPokemons)
@@ -455,7 +468,7 @@ export function StatScatterMatrix({ viewModel }: StatScatterMatrixProps) {
     return () => {
       root.on('.zoom', null);
     };
-  }, [filteredPokemons, layout, selectedPokemonKeys, statLabelByKey, xKey, yKey]);
+  }, [filteredPokemons, layout, plotClipId, selectedPokemonKeys, statLabelByKey, xKey, yKey]);
 
   const selectedPokemons = useMemo(() => {
     if (selectedPokemonKeys.length === 0) {
