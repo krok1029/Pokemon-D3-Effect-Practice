@@ -99,6 +99,79 @@ describe('image filename and form identity', () => {
     expect(target.findPokemonImagePath(6, 'mega-charizard-y')).toBeNull();
   });
 
+  it.each([
+    ['006_噴火龍.png', '006_mega-charizard-x.png', '006_mega-charizard-y.png'],
+    ['006_mega-charizard-y.png', '006_噴火龍.png', '006_mega-charizard-x.png'],
+  ])(
+    'selects each downloaded Mega asset independently of enumeration order: %j',
+    async (...names) => {
+      // Arrange
+      mockFiles(names);
+      const target = await createModule();
+
+      // Act / Assert
+      expect(target.findPokemonImagePath(6, 'charizard')).toBe('/img/006_噴火龍.png');
+      expect(target.findPokemonImagePath(6, 'mega-charizard-x')).toBe(
+        '/img/006_mega-charizard-x.png',
+      );
+      expect(target.findPokemonImagePath(6, 'mega-charizard-y')).toBe(
+        '/img/006_mega-charizard-y.png',
+      );
+      expect(target.findPokemonImagePath(6)).toBeNull();
+    },
+  );
+
+  it('does not use a regional or Zen Mode image for another form of the same species', async () => {
+    // Arrange
+    mockFiles([
+      '555_galarian-darmanitan-zen-mode.png',
+      '555_darmanitan-zen-mode.png',
+      '555_galarian-darmanitan.png',
+    ]);
+    const target = await createModule();
+
+    // Act / Assert
+    expect(target.findPokemonImagePath(555, 'darmanitan-zen-mode')).toBe(
+      '/img/555_darmanitan-zen-mode.png',
+    );
+    expect(target.findPokemonImagePath(555, 'galarian-darmanitan')).toBe(
+      '/img/555_galarian-darmanitan.png',
+    );
+    expect(target.findPokemonImagePath(555, 'galarian-darmanitan-zen-mode')).toBe(
+      '/img/555_galarian-darmanitan-zen-mode.png',
+    );
+    expect(target.findPokemonImagePath(555, 'darmanitan')).toBeNull();
+  });
+
+  it.each([
+    [710, 'pumpkaboo'],
+    [711, 'gourgeist'],
+  ])(
+    'keeps unconfirmed sizes missing when only the average size for #%s is available',
+    async (id, species) => {
+      // Arrange
+      const filename = `${id}_average-size-${species}.png`;
+      mockFiles([filename]);
+      const target = await createModule();
+
+      // Act / Assert
+      expect(target.findPokemonImagePath(id, `average-size-${species}`)).toBe(`/img/${filename}`);
+      expect(target.findPokemonImagePath(id, `small-size-${species}`)).toBeNull();
+      expect(target.findPokemonImagePath(id, `large-size-${species}`)).toBeNull();
+      expect(target.findPokemonImagePath(id, `super-size-${species}`)).toBeNull();
+    },
+  );
+
+  it('keeps Ash-Greninja missing when regular Greninja artwork is available', async () => {
+    // Arrange
+    mockFiles(['658_甲賀忍蛙.png']);
+    const target = await createModule();
+
+    // Act / Assert
+    expect(target.findPokemonImagePath(658, 'greninja')).toBe('/img/658_甲賀忍蛙.png');
+    expect(target.findPokemonImagePath(658, 'ash-greninja')).toBeNull();
+  });
+
   it('returns a placeholder when a mapped asset is absent', async () => {
     // Arrange
     mockFiles(['006_unrelated.png']);
