@@ -22,6 +22,8 @@ type PokemonFeedProps = {
   requestedPage: number;
 };
 
+const REQUEST_TIMEOUT_MS = 15_000;
+
 export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeedProps) {
   const [scope] = useState(() => ({
     filters,
@@ -39,7 +41,7 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
     pagesRef.current = pages;
   }, [pages]);
   const [loading, setLoading] = useState(!seed);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<'failed' | 'timeout' | null>(null);
   const request = useRef<AbortController | null>(null);
   const retryPage = useRef(requestedPage);
   const listRef = useRef<HTMLDivElement>(null);
@@ -68,15 +70,33 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
       request.current = controller;
       retryPage.current = page;
       setLoading(true);
-      setError(false);
+      setError(null);
+      let timedOut = false;
+      const timeout = window.setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, REQUEST_TIMEOUT_MS);
+      let onAbort!: () => void;
+      const cancelled = new Promise<never>((_, reject) => {
+        onAbort = () => {
+          window.clearTimeout(timeout);
+          reject(controller.signal.reason);
+        };
+        controller.signal.addEventListener('abort', onAbort, { once: true });
+      });
       try {
-        const response = await fetch(
-          pokemonListHref(scope.filters, page).replace('/pokemon', '/api/pokemon'),
-          { signal: controller.signal },
-        );
-        if (!response.ok) throw new Error('Could not load Pokémon');
-        const data: PokemonListPage = await response.json();
-        if (controller.signal.aborted) return;
+        const data = await Promise.race([
+          (async (): Promise<PokemonListPage> => {
+            const response = await fetch(
+              pokemonListHref(scope.filters, page).replace('/pokemon', '/api/pokemon'),
+              { signal: controller.signal },
+            );
+            if (!response.ok) throw new Error('Could not load Pokémon');
+            return response.json();
+          })(),
+          cancelled,
+        ]);
+        if (controller.signal.aborted || request.current !== controller) return;
         const currentPages = pagesRef.current;
         if (currentPages.length === 2 && !currentPages.some((batch) => batch.page === data.page)) {
           restore.current ??= visiblePokemonPosition(listRef.current);
@@ -94,11 +114,15 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
           );
         }
       } catch {
-        if (!controller.signal.aborted) setError(true);
+        if (request.current === controller && (!controller.signal.aborted || timedOut)) {
+          setError(timedOut ? 'timeout' : 'failed');
+        }
       } finally {
-        if (!controller.signal.aborted) {
+        window.clearTimeout(timeout);
+        controller.signal.removeEventListener('abort', onAbort);
+        if (request.current === controller) {
           request.current = null;
-          setLoading(false);
+          if (!controller.signal.aborted || timedOut) setLoading(false);
         }
       }
     },
@@ -217,7 +241,7 @@ export function PokemonFeed({ filters, initialPage, requestedPage }: PokemonFeed
           <p>正在載入更多寶可夢…</p>
         ) : error ? (
           <>
-            <p>載入失敗，請再試一次。</p>
+            <p>{error === 'timeout' ? '載入逾時，請再試一次。' : '載入失敗，請再試一次。'}</p>
             <button
               type="button"
               onClick={() => void loadPage(retryPage.current)}
