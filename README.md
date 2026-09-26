@@ -17,7 +17,7 @@
 
 ## 快速開始
 
-專案指定 Yarn 4.9.4，並透過 `.yarnrc.yml` 使用 `node_modules` 模式。沒有鎖定 Node.js 版本檔或 `engines` 欄位；重啟開發時應記錄實際使用的 Node.js 版本與啟動結果。
+專案透過 `.nvmrc` 指定 Node.js 24，使用 nvm 時可先執行 `nvm use`。套件管理器指定 Yarn 4.9.4，並透過 `.yarnrc.yml` 使用 `node_modules` 模式。
 
 在專案根目錄執行：
 
