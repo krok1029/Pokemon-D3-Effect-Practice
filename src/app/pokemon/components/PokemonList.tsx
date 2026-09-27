@@ -12,6 +12,7 @@ import {
   readPokemonListPage,
   type PokemonListFilters,
 } from '../lib/pokemonListQuery';
+import { typeBadgeForeground } from '../lib/typeBadgeContrast';
 
 import type { PokemonListPage } from '../view-models/pokemonListViewModel';
 
@@ -131,6 +132,7 @@ export function PokemonList({ initialPage }: PokemonListProps) {
             </button>
             {typeOptions.map((type) => {
               const active = type.slug === typeFilter;
+              const foreground = typeBadgeForeground(type.color);
               return (
                 <button
                   key={type.slug}
@@ -144,7 +146,7 @@ export function PokemonList({ initialPage }: PokemonListProps) {
                       ? {
                           borderColor: type.color,
                           backgroundColor: type.color,
-                          color: '#0b0f19',
+                          color: foreground,
                         }
                       : undefined
                   }
@@ -155,7 +157,23 @@ export function PokemonList({ initialPage }: PokemonListProps) {
                       : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800',
                   ].join(' ')}
                 >
-                  <Image src={type.iconPath} alt="" width={16} height={16} className="h-4 w-4" />
+                  <Image
+                    src={type.iconPath}
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="h-4 w-4"
+                    style={
+                      active
+                        ? {
+                            filter:
+                              foreground === '#ffffff'
+                                ? 'brightness(0) invert(1)'
+                                : 'brightness(0)',
+                          }
+                        : undefined
+                    }
+                  />
                   <span>{type.label}</span>
                 </button>
               );
