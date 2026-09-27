@@ -35,6 +35,7 @@ export function PokemonVirtualGrid({
   restore,
 }: PokemonVirtualGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
+  const detachedFocusHref = useRef<string | null>(null);
   const [metrics, setMetrics] = useState({ columns: 1, margin: 0 });
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const initialized = useRef(false);
@@ -67,6 +68,34 @@ export function PokemonVirtualGrid({
     getItemKey,
     rangeExtractor,
     isScrollingResetDelay: 160,
+  });
+
+  const preserveFocusedLink = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    return () => {
+      const active = document.activeElement;
+      if (active instanceof HTMLAnchorElement && node.contains(active)) {
+        // Virtualization and column changes replace card parents, even for the same form.
+        detachedFocusHref.current = active.getAttribute('href');
+      }
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const href = detachedFocusHref.current;
+    if (!href) return;
+    if (document.activeElement !== document.body) {
+      detachedFocusHref.current = null;
+      return;
+    }
+    const link = Array.from(gridRef.current?.querySelectorAll('a') ?? []).find(
+      (candidate) => candidate.getAttribute('href') === href,
+    );
+    // The first enabled virtualizer commit can have no rows until it measures the viewport.
+    if (link) {
+      detachedFocusHref.current = null;
+      link.focus({ preventScroll: true });
+    }
   });
 
   useLayoutEffect(() => {
@@ -153,6 +182,7 @@ export function PokemonVirtualGrid({
     return (
       <div
         key={pokemonCardAnchor(pokemon)}
+        ref={preserveFocusedLink}
         role="listitem"
         aria-posinset={startIndex + index + 1}
         aria-setsize={total}
