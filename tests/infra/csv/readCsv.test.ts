@@ -25,4 +25,13 @@ describe('readCsvFile', () => {
     expect(readFileMock).toHaveBeenCalledWith('/path/to/data.csv', 'utf8');
     expect(records).toEqual([{ Name: 'Pikachu', HP: '35', Legendary: 'false' }]);
   });
+
+  it('removes a leading UTF-8 BOM without changing quoted field values', async () => {
+    const csv = '\uFEFFNumber,Name,Notes\n025," Pikachu ","keeps \uFEFF inside"\n';
+    readFileMock.mockResolvedValue(csv);
+
+    const records = await readCsvFile('/path/to/bom.csv');
+
+    expect(records).toEqual([{ Number: '025', Name: ' Pikachu ', Notes: 'keeps \uFEFF inside' }]);
+  });
 });

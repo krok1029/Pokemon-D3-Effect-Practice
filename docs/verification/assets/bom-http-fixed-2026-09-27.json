@@ -1,0 +1,22 @@
+[
+  {
+    "route": "/api/pokemon",
+    "status": 200,
+    "text": "{\"pokemons\":[{\"id\":25,\"formId\":\"pikachu\",\"detailHref\":\"/pokemon/25?form=pikachu\",\"name\":\"Pikachu\",\"isLegendary\":false,\"accentColor\":\"#F2D94E\",\"imagePath\":\"/img/"
+  },
+  {
+    "route": "/pokemon",
+    "status": 200,
+    "text": "跳到主要內容\nPokemon D3 Effect\n寶可夢\n圖表\nGitHub\n\n資料總表\n\n個別寶可夢資料\n\n收錄 1 筆型態樣本，涵蓋 1 個不同圖鑑編號。可用搜尋與屬性篩選查找六項基礎能力值、屬性與傳說狀態。\n\n每筆型態資料為一個樣本；同一圖鑑編號可能有多種型態。雙屬性樣本在屬性統計中同時計入兩組，各組筆數不可直接"
+  },
+  {
+    "route": "/chart",
+    "status": 200,
+    "text": "跳到主要內容\nPokemon D3 Effect\n寶可夢\n圖表\nGitHub\n寶可夢能力平均值\n\n目前彙整 1 筆型態樣本，涵蓋 1 個不同圖鑑編號，以下顯示六項基礎能力的平均值。\n\n每筆型態資料為一個樣本；同一圖鑑編號可能有多種型態。傳說狀態沿用資料來源的標記。\n\n排除傳說寶可夢\n包含傳說\n六項能力雷達圖\n雷達圖展示"
+  },
+  {
+    "route": "/pokemon/25",
+    "status": 200,
+    "text": "跳到主要內容\nPokemon D3 Effect\n寶可夢\n圖表\nGitHub\n← 回到列表\n/\n#025\n\n#025\n\nPikachu\n電\n能力值總和\n320\n\n圖片來源為專案提供的本機圖檔。尚無此型態對應圖檔時，會顯示缺圖提示。\n\n能力值細節\nHP\n35\n物攻\n55\n物防\n40\n特攻\n50\n特防\n50\n速度\n90\n屬"
+  }
+]
