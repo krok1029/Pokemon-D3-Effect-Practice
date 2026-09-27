@@ -44,3 +44,5 @@
 #21～#25 已補上圖鑑導覽重設、分析條件保留、散佈圖裁切、搜尋選取與隔離回歸。`yarn test:e2e` 在暫存工作目錄建置，依序以完整 CSV 與平均圖 fixture 執行三瀏覽器測試，不使用根 `.next` 或既有開發服務；預設一個 worker。輸出位於 `test-results/regression-*`，GitHub Actions 失敗時保存報告及 trace。各項驗收見 [ROADMAP](ROADMAP.md)。2～4 隻寶可夢比較仍是待定規格的候選，尚未實作。
 
 第二次盤點後修正五項：選取樣式不再重建散佈圖手勢、平均／雷達圖直接使用主題 CSS 顏色、圖鑑與圖表共用編號及名稱搜尋正規化、列表請求 15 秒逾時後可重試、CSV 整數入口不再截斷非法值。結果與重現命令見 [平行修正驗收](docs/verification/parallel-fixes-2026-09-26.md)。其後已完成圖鑑徽章文字與圖示對比、詳細頁與圖表語意標題、CSV 傳說／屬性驗證、繁中 404 返回入口，以及 Geist 字型套用；見 [剩餘修正驗收](docs/verification/remaining-fixes-2026-09-27.md)。CSV 合法屬性統一為英文首字大寫，非法傳說標記與未知屬性在 Infra 入口報錯。
+
+後續五項邊界修正涵蓋：圖鑑 48→72 筆切換虛擬化時保留鍵盤焦點、圖鑑屬性篩選及散佈圖圖例對比、CSV UTF-8 BOM 相容，以及正規化後拒絕相同主副屬性。驗證與重現入口見 [焦點、篩選與資料修正](docs/verification/focus-filter-data-fixes-2026-09-27.md)。

@@ -51,6 +51,16 @@
 | 無效編號及型態提供繁中 404 與返回圖鑑入口 | [404 返回](docs/verification/not-found-recovery.md) |
 | Geist 字型變數與預設字族正確套用 | [字型載入](docs/verification/font-loading-fix.md) |
 
+同日再盤點的五項邊界缺口已補上，整合結果見 [焦點、篩選與資料修正](docs/verification/focus-filter-data-fixes-2026-09-27.md)：
+
+| 修正 | 驗收紀錄 |
+| --- | --- |
+| 圖鑑啟用虛擬化時保留原卡片鍵盤焦點 | [焦點保留](docs/verification/virtualization-focus-fix.md) |
+| 圖鑑屬性篩選明暗主題及選取狀態對比 | [圖鑑篩選](docs/verification/catalog-filter-contrast-fix.md) |
+| 散佈圖主屬性圖例的文字與圖示對比 | [圖表圖例](docs/verification/chart-legend-contrast-fix.md) |
+| CSV 支援 UTF-8 BOM | [BOM 相容](docs/verification/csv-bom-fix.md) |
+| 正規化後拒絕重複主副屬性 | [重複屬性驗證](docs/verification/csv-duplicate-type-fix.md) |
+
 ## 後續候選：定義 2～4 隻寶可夢比較
 
 前置的第二次盤點修正已涵蓋散佈圖選取後平移、暗色圖表文字、搜尋格式、載入逾時及 CSV 整數驗證；各項結果與回歸入口見 [平行修正驗收](docs/verification/parallel-fixes-2026-09-26.md)。

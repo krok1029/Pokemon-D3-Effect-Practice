@@ -52,7 +52,7 @@ Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`At
 
 整數欄位先驗證完整十進位格式，再以 `Number.isSafeInteger` 檢查精度；接受前後空白、前置零與正負號，小數字串（含 `.0`）、科學記號、數字混雜文字及不安全整數均報錯。錯誤中的 Row 是不含 CSV 標題列的資料筆次；合法整數的正值／能力範圍仍交由 Domain 驗證。
 
-`Legendary` 僅接受 boolean、數字 0／1，以及不分大小寫、允許前後空白的 true／false／0／1／0.0／1.0 字串。主副屬性由 Infra 驗證 18 種有效名稱，統一為英文首字大寫後再進入 Domain，避免平均分組重複。副屬性另允許空白、none、null 或缺欄；主屬性必填。其餘內容均附資料筆次與欄位報錯，測試見 [CSV 欄位驗收](docs/verification/csv-field-validation.md)。
+`Legendary` 僅接受 boolean、數字 0／1，以及不分大小寫、允許前後空白的 true／false／0／1／0.0／1.0 字串。主副屬性由 Infra 驗證 18 種有效名稱，統一為英文首字大寫後再進入 Domain，避免平均分組重複。副屬性另允許空白、none、null 或缺欄；主屬性必填，正規化後副屬性不得與主屬性相同。解析器支援 UTF-8 BOM，避免檔案匯出時的 BOM 影響第一欄名稱。其餘內容均附資料筆次與欄位報錯，測試見 [CSV 欄位驗收](docs/verification/csv-field-validation.md)。
 
 ## 4. App 層與互動狀態
 
