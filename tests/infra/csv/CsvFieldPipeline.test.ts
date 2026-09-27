@@ -76,4 +76,20 @@ describe('CSV field validation through application and display models', () => {
       await expect(target.execute()).rejects.toThrow(`Row 1: column "${column}"`);
     });
   });
+
+  it('rejects duplicate normalized types before repository data becomes a DTO', async () => {
+    await withCsv(
+      [
+        '26,Raichu,Electric,none,60,90,55,90,80,110,0',
+        '25,Pikachu,Electric, eLeCtRiC ,35,55,40,50,50,90,0',
+      ].join('\n'),
+      async (repository) => {
+        const target = new GetPokemonBaseStatsUseCase(repository);
+
+        await expect(target.execute()).rejects.toThrow(
+          'Row 2: column "Type 2" must differ from "Type 1"',
+        );
+      },
+    );
+  });
 });

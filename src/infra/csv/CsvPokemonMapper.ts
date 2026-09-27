@@ -55,6 +55,11 @@ export class CsvPokemonMapper {
     const isLegendary = CsvPokemonMapper.readBoolean(row, 'Legendary', index);
     const primaryType = CsvPokemonMapper.readType(row, TYPE_COLUMN_MAP.primary, index);
     const secondaryType = CsvPokemonMapper.readSecondaryType(row, index);
+    if (secondaryType === primaryType) {
+      throw new Error(
+        `Row ${index + 1}: column "${TYPE_COLUMN_MAP.secondary}" must differ from "${TYPE_COLUMN_MAP.primary}"`,
+      );
+    }
     return new Pokemon(id, name, stats, isLegendary, primaryType, secondaryType);
   }
 

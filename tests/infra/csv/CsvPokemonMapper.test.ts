@@ -170,16 +170,31 @@ describe('CsvPokemonMapper', () => {
       'Fairy',
     ];
 
+    const secondaryTypes = [...types.slice(1), types[0]];
     const pokemons = types.map((type, index) =>
       CsvPokemonMapper.toDomain(
-        buildRow({ 'Type 1': ` ${type.toUpperCase()} `, 'Type 2': type.toLowerCase() }),
+        buildRow({
+          'Type 1': ` ${type.toUpperCase()} `,
+          'Type 2': secondaryTypes[index].toLowerCase(),
+        }),
         index,
       ),
     );
 
     expect(pokemons.map((pokemon) => pokemon.primaryType)).toEqual(types);
-    expect(pokemons.map((pokemon) => pokemon.secondaryType)).toEqual(types);
+    expect(pokemons.map((pokemon) => pokemon.secondaryType)).toEqual(secondaryTypes);
   });
+
+  it.each(['Electric', 'electric', ' ELECTRIC '])(
+    'rejects a duplicate secondary type after normalization: %s',
+    (secondaryType) => {
+      const row = buildRow({ 'Type 1': ' Electric ', 'Type 2': secondaryType });
+
+      expect(() => CsvPokemonMapper.toDomain(row, 6)).toThrow(
+        'Row 7: column "Type 2" must differ from "Type 1"',
+      );
+    },
+  );
 
   it.each(['Type 1', 'Type 2'])('rejects unknown or non-string values in %s', (column) => {
     for (const value of ['Electrc', '???', 1, false, {}]) {
