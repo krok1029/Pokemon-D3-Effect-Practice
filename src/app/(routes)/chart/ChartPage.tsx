@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/app/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from '@/app/components/ui/card';
 import { buildDatasetSummaryViewModel } from '@/app/view-models/datasetSummaryViewModel';
 
 import { LegendaryToggle } from './components/LegendaryToggle';
@@ -48,7 +42,7 @@ export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) 
 
       <Card className="py-0">
         <CardHeader className="gap-2 px-6 pt-6">
-          <CardTitle className="text-xl">六項能力雷達圖</CardTitle>
+          <h2 className="text-xl leading-none font-semibold">六項能力雷達圖</h2>
           <CardDescription>雷達圖展示六項能力值的平均表現，越靠外代表能力越高。</CardDescription>
         </CardHeader>
         <CardContent className="pb-6">
@@ -71,7 +65,7 @@ export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) 
 
       <Card className="py-0">
         <CardHeader className="gap-2 px-6 pt-6">
-          <CardTitle className="text-xl">依屬性比較能力平均值</CardTitle>
+          <h2 className="text-xl leading-none font-semibold">依屬性比較能力平均值</h2>
           <CardDescription>
             各屬性依選擇的能力值排序，橫條越長代表平均值越高。切換「排除傳說寶可夢」會更新結果。
             雙屬性樣本同時計入兩組，各組筆數不可直接相加作為物種數。
@@ -84,7 +78,7 @@ export async function ChartPage({ excludeLegendaries = false }: ChartPageProps) 
 
       <Card className="py-0">
         <CardHeader className="gap-2 px-6 pt-6">
-          <CardTitle className="text-xl">能力散佈圖</CardTitle>
+          <h2 className="text-xl leading-none font-semibold">能力散佈圖</h2>
           <CardDescription>
             從下方選擇兩項能力，觀察寶可夢在該組合下的分布；拖曳散佈圖即可框選並檢視詳細資料。
           </CardDescription>

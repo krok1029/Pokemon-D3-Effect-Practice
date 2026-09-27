@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/app/components/ui/card';
 
 import { PokemonDetailImage } from '../components/PokemonDetailImage';
 import { PokemonListReturnLink } from '../components/PokemonListReturnLink';
@@ -76,7 +76,7 @@ export default async function PokemonDetailRoute(props: PokemonDetailRouteProps)
               <p className="text-xs font-semibold tracking-[0.08em] text-slate-500 uppercase dark:text-slate-400">
                 #{paddedId}
               </p>
-              <CardTitle className="mt-1 text-3xl">{pokemon.name}</CardTitle>
+              <h1 className="mt-1 text-3xl leading-none font-semibold">{pokemon.name}</h1>
             </div>
             {pokemon.isLegendary ? (
               <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold tracking-wide text-amber-800 uppercase shadow-sm dark:bg-amber-900/80 dark:text-amber-100">
@@ -116,7 +116,7 @@ export default async function PokemonDetailRoute(props: PokemonDetailRouteProps)
 
         <Card className="border border-slate-200/70 shadow-sm dark:border-slate-800">
           <CardHeader className="pb-0">
-            <CardTitle className="text-xl">能力值細節</CardTitle>
+            <h2 className="text-xl leading-none font-semibold">能力值細節</h2>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
             {pokemon.stats.map((stat) => (
