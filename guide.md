@@ -1,6 +1,6 @@
 # 開發指南
 
-這份指南說明現有程式如何運作，以及改動時應追蹤的邊界。用途、啟動指令與資料總覽見 [README](README.md)，工作狀態集中於 [ROADMAP](ROADMAP.md)。以下隨 2026-09-26 的 #21～#25 實作更新。
+這份指南說明現有程式如何運作，以及改動時應追蹤的邊界。用途、啟動指令與資料總覽見 [README](README.md)，工作狀態集中於 [ROADMAP](ROADMAP.md)。以下隨 2026-09-27 的剩餘介面與 CSV 驗證修正更新。
 
 ## 1. 從哪裡開始讀
 
@@ -52,6 +52,8 @@ Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`At
 
 整數欄位先驗證完整十進位格式，再以 `Number.isSafeInteger` 檢查精度；接受前後空白、前置零與正負號，小數字串（含 `.0`）、科學記號、數字混雜文字及不安全整數均報錯。錯誤中的 Row 是不含 CSV 標題列的資料筆次；合法整數的正值／能力範圍仍交由 Domain 驗證。
 
+`Legendary` 僅接受 boolean、數字 0／1，以及不分大小寫、允許前後空白的 true／false／0／1／0.0／1.0 字串。主副屬性由 Infra 驗證 18 種有效名稱，統一為英文首字大寫後再進入 Domain，避免平均分組重複。副屬性另允許空白、none、null 或缺欄；主屬性必填。其餘內容均附資料筆次與欄位報錯，測試見 [CSV 欄位驗收](docs/verification/csv-field-validation.md)。
+
 ## 4. App 層與互動狀態
 
 頁面通常由 Server Component 呼叫 Presenter，再將可序列化的 ViewModel 傳給 Client Component。資料讀取使用 Node.js 檔案系統，現有架構需要可讀取 `data` 與 `public/img` 的伺服器環境；`GET /api/pokemon` 提供無限捲動的後續批次，與頁面共用 Presenter；沒有獨立後端服務。
@@ -92,7 +94,7 @@ Mapper 使用 `Number`、`Name`、`Type 1`、`Type 2`、`Legendary`、`HP`、`At
 
 `PokemonCardImage` 保留 96×96 空間，起始前三張優先，其餘圖片靠近視窗 240px 內才請求；有載入佔位、淡入、缺圖與失敗提示。虛擬列表捲動停止 160ms 後再請求新進入畫面的圖片；同一張掛載中的卡片不會因捲動而移除已請求的圖片。
 
-型態網址例如 `/pokemon/6?form=mega-charizard-x`。名稱相同且 CSV 重排時網址不變；名稱若改名則需另行處理舊 slug 的轉址。舊 `/pokemon/6` 依同編號中最短名稱、再按名稱排序選定預設型態，預設 CSV 會得到 Charizard；這是穩定的退回策略，不宣稱能辨識任意來源的基本型態。非法編號、格式錯誤或不存在的明示型態顯示找不到資料。
+型態網址例如 `/pokemon/6?form=mega-charizard-x`。名稱相同且 CSV 重排時網址不變；名稱若改名則需另行處理舊 slug 的轉址。舊 `/pokemon/6` 依同編號中最短名稱、再按名稱排序選定預設型態，預設 CSV 會得到 Charizard；這是穩定的退回策略，不宣稱能辨識任意來源的基本型態。非法編號、格式錯誤或不存在的明示型態透過 `notFound()` 回傳 404，由 `app/pokemon/not-found.tsx` 顯示繁中說明與返回圖鑑搜尋的連結。
 
 圖鑑詳細連結附帶受限制的 `returnTo`，保留篩選條件、`page` 批次及原卡片錨點；詳細頁的返回入口只接受本網站圖鑑路徑與已知參數。直接開啟詳細頁時返回圖鑑第一批。批次超過總數會回到最後一批，非正整數回到第一批；空結果亦回到第一批。
 
