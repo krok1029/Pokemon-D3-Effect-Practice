@@ -31,9 +31,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-Hant" suppressHydrationWarning>
       <body
         className={[
-          geistSans,
-          geistMono,
-          'min-h-dvh bg-white text-slate-900 antialiased',
+          geistSans.variable,
+          geistMono.variable,
+          'min-h-dvh bg-white font-sans text-slate-900 antialiased',
           'dark:bg-slate-950 dark:text-slate-100',
         ].join(' ')}
       >
