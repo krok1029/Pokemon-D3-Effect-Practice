@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { PokemonCardImage } from './PokemonCardImage';
 import { rememberPokemonPosition } from '../lib/pokemonListPosition';
 import { pokemonCardAnchor, pokemonDetailReturnHref } from '../lib/pokemonListQuery';
+import { typeBadgeForeground } from '../lib/typeBadgeContrast';
 
 import type { PokemonCardViewModel } from '../view-models/pokemonCardViewModel';
 
@@ -60,22 +61,29 @@ export function PokemonCard({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {pokemon.typeBadges.map((badge) => (
-                <span
-                  key={badge.slug}
-                  className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold text-slate-900 shadow-sm dark:text-slate-50"
-                  style={{ backgroundColor: badge.color }}
-                >
-                  <Image
-                    src={badge.iconPath}
-                    alt={badge.label}
-                    width={16}
-                    height={16}
-                    className="h-4 w-4"
-                  />
-                  {badge.label}
-                </span>
-              ))}
+              {pokemon.typeBadges.map((badge) => {
+                const foreground = typeBadgeForeground(badge.color);
+                return (
+                  <span
+                    key={badge.slug}
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold shadow-sm"
+                    style={{ backgroundColor: badge.color, color: foreground }}
+                  >
+                    <Image
+                      src={badge.iconPath}
+                      alt=""
+                      width={16}
+                      height={16}
+                      className={
+                        foreground === '#ffffff'
+                          ? 'h-4 w-4 brightness-0 invert'
+                          : 'h-4 w-4 brightness-0'
+                      }
+                    />
+                    {badge.label}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>
