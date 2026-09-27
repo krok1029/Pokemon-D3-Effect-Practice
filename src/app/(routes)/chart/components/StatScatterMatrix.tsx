@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
+import { typeBadgeForeground } from '@/app/pokemon/lib/typeBadgeContrast';
+
 import type { AverageStatKey } from '@/core/application/dto/AverageStatsDto';
 
 import { PokemonChartSelection } from './PokemonChartSelection';
@@ -655,31 +657,38 @@ function TypeLegend({ options, activeSlugs, onToggle, onReset }: TypeLegendProps
       <div className="mt-2 flex flex-wrap gap-2">
         {options.map((option) => {
           const isActive = activeSlugs.includes(option.slug);
+          const foreground = typeBadgeForeground(option.color);
           const buttonStyle = {
             borderColor: option.color,
-            color: option.color,
             backgroundColor: isActive ? withAlphaColor(option.color, 0.18) : 'transparent',
           };
           return (
             <button
               key={option.slug}
               type="button"
-              className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition ${
-                isActive ? 'shadow-sm' : 'opacity-75 hover:opacity-100'
+              className={`text-foreground flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                isActive ? 'shadow-sm' : 'border-dashed'
               }`}
               style={buttonStyle}
               aria-pressed={isActive}
               onClick={() => onToggle(option.slug)}
             >
-              <Image
-                width={16}
-                height={16}
-                src={option.iconPath}
-                alt={option.label}
-                className="h-4 w-4"
-                style={{ filter: isActive ? 'none' : 'grayscale(1)', opacity: isActive ? 1 : 0.7 }}
+              <span
+                className="inline-flex rounded-full p-0.5"
+                style={{ backgroundColor: option.color, color: foreground }}
                 aria-hidden="true"
-              />
+              >
+                <Image
+                  width={16}
+                  height={16}
+                  src={option.iconPath}
+                  alt=""
+                  className="h-4 w-4"
+                  style={{
+                    filter: foreground === '#ffffff' ? 'brightness(0) invert(1)' : 'brightness(0)',
+                  }}
+                />
+              </span>
               <span>{option.label}</span>
             </button>
           );
